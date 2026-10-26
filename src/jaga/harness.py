@@ -22,12 +22,48 @@ from .adjudicator import Verdict, adjudicate
 from .config import config_hash
 from .frames import probe_duration, sample_frames
 from .motion_gate import gate_clip
+from .overlays import encode_png, read_png_rgb, render_overlay
 from .sam_runner import AnomalyError, SamRunner
 from .timing import timing_from_video
 from .traces import traces_text
 
 _LABEL_ORDER = {"fall_candidate": 0, "uncertain": 1, "negative": 2,
                 "no_evidence": 3}
+
+
+def overlay_picker(window, run):
+    """The D3 evidence picker: mask overlays over blurred backgrounds.
+
+    Picks the first, middle, and last keyframes of the segment
+    window and renders each as an overlay (SPEC D3: never raw
+    frames). Requires the runner to have kept rasters; a keyframe
+    whose instances lack rasters raises rather than silently
+    degrading to a raw frame. A keyframe with no instances renders
+    as the blurred background alone, which is itself the evidence
+    ("no person segmented here").
+    """
+    import base64
+
+    by_t = {round(k.t_s, 3): k for k in run.keyframes}
+    chosen = [window[0], window[len(window) // 2], window[-1]]
+    urls, labels = [], []
+    for t_s, path in chosen:
+        kf = by_t.get(round(t_s, 3))
+        if kf is None:
+            raise ValueError(f"no keyframe result at {t_s}s for overlay")
+        masks = []
+        for inst in kf.instances:
+            if inst.raster is None:
+                raise ValueError(
+                    "overlay picker needs mask rasters; construct the "
+                    "runner with keep_rasters=True")
+            masks.append((inst.raster, (inst.box[0], inst.box[1])))
+        img = render_overlay(read_png_rgb(path), masks)
+        urls.append("data:image/png;base64,"
+                    + base64.b64encode(encode_png(img)).decode())
+        labels.append(f"Keyframe at {t_s:.1f} s (mask overlay over a "
+                      "blurred background):")
+    return urls, labels
 
 
 def _merge_labels(labels: list[str]) -> str:
@@ -96,6 +132,15 @@ def run_clip(video: Path, row: dict, runner: SamRunner, cache_root: Path,
             rec["outcome"] = "pipeline_error"
             rec["wall_s"] = round(time.monotonic() - t0, 2)
             return rec
+        except ValueError as e:
+            # A parse/validation failure on this segment's evidence:
+            # the clip is a pipeline failure, never a negative, and
+            # the batch survives to score the remaining clips.
+            seg_rec["pipeline_error"] = f"{type(e).__name__}: {e}"
+            rec["segments"].append(seg_rec)
+            rec["outcome"] = "pipeline_error"
+            rec["wall_s"] = round(time.monotonic() - t0, 2)
+            return rec
         verdict = rules_mod.evaluate(run.tracks, run.frame_w,
                                      run.frame_h, timing=timing,
                                      view=rec["view"])
@@ -106,12 +151,13 @@ def run_clip(video: Path, row: dict, runner: SamRunner, cache_root: Path,
         seg_rec["rules_phases"] = {
             name: {"satisfied": ph.satisfied, "detail": ph.detail}
             for name, ph in verdict.phases.items()}
+        seg_rec["rules_params"] = verdict.params
         labels.append(verdict.label)
         if (transport is not None
                 and verdict.label in adjudicate_labels):
             images, img_labels = ([], [])
             if image_picker:
-                images, img_labels = image_picker(window)
+                images, img_labels = image_picker(window, run)
             adj: Verdict = adjudicate(
                 transport,
                 traces_text(clip_id, run, timing, verdict,

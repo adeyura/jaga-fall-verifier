@@ -44,7 +44,7 @@ from __future__ import annotations
 import asyncio
 import json
 import math
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 
 import numpy as np
 
@@ -63,6 +63,11 @@ class Instance:
     bottom_band_share: float                # share of pixels in base band
     elongation: float | None                # principal-axis ratio, >= 1
     axis_tilt_deg: float | None             # 0 = horizontal, 90 = vertical
+    # Box-sized boolean mask, retained only when the caller asks
+    # (parse_sam_stream(keep_raster=True)) for overlay rendering.
+    # Never serialized; features never read it.
+    raster: np.ndarray | None = field(default=None, repr=False,
+                                      compare=False)
 
 
 async def _events_from_sse(text: str):
@@ -104,7 +109,10 @@ def _axis_features(xs: np.ndarray, ys: np.ndarray
         # mask carries no body-axis evidence. Report no axis at all
         # rather than a precise-looking tilt built on nothing.
         return None, None
-    return math.sqrt(lam_max / lam_min), tilt
+    # Cap the ratio: past ~50 the axis is a line for every consumer
+    # this project has, and an uncapped value (hundreds, from a
+    # near-degenerate minor axis) is false precision in the record.
+    return min(math.sqrt(lam_max / lam_min), 50.0), tilt
 
 
 def _normalize(fn):
@@ -130,7 +138,7 @@ def _normalize(fn):
         raise ValueError(f"SAM stream parse failed: {e}") from e
 
 
-def parse_sam_stream(text: str) -> tuple[list[Instance], dict]:
+def parse_sam_stream(text: str, keep_raster: bool = False) -> tuple[list[Instance], dict]:
     """Parse one completed SAM image response.
 
     Returns (instances, stats). Instances may be empty (a genuine "no
@@ -157,6 +165,15 @@ def parse_sam_stream(text: str) -> tuple[list[Instance], dict]:
     result = _normalize(lambda: asyncio.run(run()))
     if not isinstance(result.outcome, CompletedOutcome):
         raise ValueError(f"SAM response did not complete: {result.outcome}")
+    # Termination is evidenced in the stream text, not delegated to
+    # the library's say-so: a stream cut before its completion event
+    # must not be readable as a completed (possibly empty) result.
+    if ('"type":"response.completed"' not in text
+            and "data: [DONE]" not in text):
+        raise ValueError(
+            "SAM stream carries no completion evidence (no "
+            "response.completed event and no [DONE] sentinel); "
+            "refusing to read a possibly truncated stream as a result")
     if result.diagnostics:
         raise ValueError(f"SAM response carried diagnostics: {result.diagnostics}")
 
@@ -247,6 +264,7 @@ def parse_sam_stream(text: str) -> tuple[list[Instance], dict]:
                 bottom_band_share=float((ys >= band_top).mean()),
                 elongation=elongation,
                 axis_tilt_deg=tilt,
+                raster=(raster > 0) if keep_raster else None,
             ))
         stats = {
             "boxes_without_masks": len(set(boxes) - set(masks)),

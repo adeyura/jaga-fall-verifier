@@ -97,7 +97,8 @@ def build_tracks(keyframes: list[tuple[float, list[Instance]]],
         iou_threshold = FEATURES["iou_threshold"]
     if max_missed is None:
         max_missed = FEATURES["max_missed_keyframes"]
-    if not (0.0 < iou_threshold <= 1.0) or max_missed < 0:
+    if (not (0.0 < iou_threshold <= 1.0)
+            or not math.isfinite(max_missed) or max_missed < 0):
         raise ValueError(
             f"invalid association parameters: iou_threshold="
             f"{iou_threshold}, max_missed={max_missed}")
@@ -112,6 +113,37 @@ def build_tracks(keyframes: list[tuple[float, list[Instance]]],
                 raise ValueError(
                     f"box for instance {inst.object_id} lies outside "
                     f"the {frame_w}x{frame_h} frame: {inst.box}")
+            # Producer-geometry contract: an instance's own numbers
+            # must cohere with its box. The SAM parser guarantees
+            # these by construction; any other producer is checked,
+            # because incoherent geometry otherwise flows downstream
+            # as plausible numbers.
+            bw, bh = right - left, bottom - top
+            if not (0 < inst.mask_area_px <= bw * bh):
+                raise ValueError(
+                    f"mask area {inst.mask_area_px} incoherent with "
+                    f"box {inst.box} for instance {inst.object_id}")
+            if not (0 <= inst.bottom_y < bh):
+                raise ValueError(
+                    f"bottom_y {inst.bottom_y} outside the box height "
+                    f"for instance {inst.object_id}")
+            ccx, ccy = inst.centroid_xy
+            if not (math.isfinite(ccx) and math.isfinite(ccy)
+                    and -0.5 <= ccx <= bw - 0.5 + 1.0
+                    and -0.5 <= ccy <= bh - 0.5 + 1.0):
+                raise ValueError(
+                    f"centroid {inst.centroid_xy} outside its box for "
+                    f"instance {inst.object_id}")
+            for name, val in (("elongation", inst.elongation),
+                              ("axis_tilt_deg", inst.axis_tilt_deg)):
+                if val is not None and not math.isfinite(val):
+                    raise ValueError(
+                        f"{name} is not finite for instance "
+                        f"{inst.object_id}")
+            if not (0.0 <= inst.bottom_band_share <= 1.0):
+                raise ValueError(
+                    f"bottom_band_share {inst.bottom_band_share} "
+                    f"outside [0, 1] for instance {inst.object_id}")
     tracks: list[Track] = []
     next_id = 0
     prev_t: float | None = None
@@ -174,7 +206,13 @@ def build_tracks(keyframes: list[tuple[float, list[Instance]]],
                     f"at t={t_s}")
             speed: float | None = None
             vy: float | None = None
-            if tr.frames:
+            if tr.frames and not spans_gap:
+                # Velocity is computed only between consecutive
+                # observed keyframes. Across a missed-keyframe gap
+                # the quotient would be an average over an unobserved
+                # interval wearing a keyframe velocity's name, so it
+                # stays None (unmeasured); dt_s and spans_gap keep
+                # the provenance.
                 prev = tr.frames[-1]
                 dt = t_s - tr.last_t
                 if dt > 0:
@@ -264,6 +302,15 @@ def stillness(track: Track, frame_w: int | None = None,
         min_span_s = FEATURES["stillness_min_span_s"]
     if max_gap_s is None:
         max_gap_s = FEATURES["stillness_max_gap_s"]
+    for _name, _v in (("window_s", window_s), ("min_span_s", min_span_s),
+                      ("max_gap_s", max_gap_s)):
+        if not math.isfinite(_v) or _v < 0:
+            raise ValueError(f"stillness {_name} must be finite and "
+                             f">= 0, got {_v}")
+    if window_s <= 0 or min_span_s > window_s:
+        raise ValueError(
+            f"stillness window {window_s} / min span {min_span_s} "
+            "cannot support a measurement")
     if not track.frames:
         return None
     if anchor == "start":

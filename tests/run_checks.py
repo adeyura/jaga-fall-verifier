@@ -35,6 +35,12 @@ _FIXTURE_CANDIDATES = [
 ]
 FIXTURE = next((p for p in _FIXTURE_CANDIDATES if p and Path(p).exists()),
                None)
+# Committed synthetic fixture: a real SAM stream elicited from an
+# AI-generated mannequin image (no dataset content, no real person).
+# Always present, so the parse protections are exercised in every
+# checkout; the dataset-derived fixture above is a local extra.
+SYNTH = ROOT / "tests" / "fixtures" / "sam_stream_synth.txt"
+SYNTH_STREAM = SYNTH.read_text() if SYNTH.exists() else None
 
 RESULTS = []
 
@@ -476,7 +482,7 @@ def _():
     def fake_transport(body):
         return {"choices": [{"message": {"content": GOOD}}], "usage": {}}
 
-    def picker(window):
+    def picker(window, run):
         return [], ["Keyframe at 0.0 s:"]
 
     rec = run_clip(root / row["video_path"], row, StubRunner(),
@@ -607,7 +613,7 @@ def _():
 
     real_parse = sr.parse_sam_stream
 
-    def fake_parse(text):
+    def fake_parse(text, **kwargs):
         return [], {"boxes_without_masks": 0, "text_records": 0,
                     "tiny_instances": 0, "masks_superseded": 2}
     sr.parse_sam_stream = fake_parse
@@ -641,12 +647,343 @@ def _():
 
 
 def main() -> int:
+    strict = os.environ.get("JAGA_STRICT") == "1"
     failed = 0
     for name, status, note in RESULTS:
         print(f"{status:4}  {name}" + (f"  — {note}" if note else ""))
         failed += status == "FAIL"
-    print(f"\n{len(RESULTS)} checks, {failed} failed")
+        if strict and status == "SKIP":
+            failed += 1
+    print(f"\n{len(RESULTS)} checks, {failed} failed"
+          + (" (strict: skips fail)" if strict else ""))
     return 1 if failed else 0
+
+
+@check("overlays: tint lands on the mask, background stays blurred")
+def _():
+    import numpy as _np
+    from jaga.overlays import render_overlay, blur_background
+    frame = _np.zeros((60, 80, 3), dtype=_np.uint8)
+    frame[:, :40] = (200, 200, 200)
+    frame[:, 40:] = (20, 20, 20)
+    mask = _np.zeros((20, 10), dtype=bool)
+    mask[5:15, 2:8] = True
+    out = render_overlay(frame, [(mask, (30, 20))])
+    assert out.shape == frame.shape and out.dtype == _np.uint8
+    bg = blur_background(frame)
+    assert bg.shape == frame.shape
+    inside = out[30, 34].astype(int)   # inside the mask
+    under = bg[30, 34].astype(int)     # the blurred background there
+    outside = out[30, 5].astype(int)   # blurred background only
+    # the tint must push the pixel red-ward of its own background
+    assert (inside[0] - inside[1]) > (under[0] - under[1]) + 40, inside
+    assert inside[0] > under[0], (inside, under)
+    assert abs(int(outside[0]) - int(outside[2])) < 30, outside
+
+
+@check("overlays: a mask that does not fit its frame raises")
+def _():
+    import numpy as _np
+    from jaga.overlays import render_overlay
+    frame = _np.zeros((40, 40, 3), dtype=_np.uint8)
+    mask = _np.ones((10, 10), dtype=bool)
+    try:
+        render_overlay(frame, [(mask, (35, 0))])
+    except ValueError:
+        pass
+    else:
+        raise AssertionError("out-of-frame mask placement did not raise")
+
+
+@check("overlays: PNG encode/decode round-trips")
+def _():
+    import numpy as _np
+    from jaga.overlays import encode_png, read_png_rgb
+    img = _np.arange(4 * 5 * 3, dtype=_np.uint8).reshape(4, 5, 3)
+    p = ROOT / "tests" / "fixtures" / "overlay_roundtrip.png"
+    p.write_bytes(encode_png(img))
+    back = read_png_rgb(p)
+    assert back.shape == img.shape
+    assert int(_np.abs(back.astype(int) - img.astype(int)).max()) <= 1
+
+
+@check("parse: rasters retained only on request, and they add up")
+def _():
+    insts, _ = parse_sam_stream(SYNTH_STREAM, keep_raster=True)
+    assert insts and all(i.raster is not None for i in insts)
+    for i in insts:
+        assert i.raster.shape == (i.mask_height, i.mask_width)
+        assert int(i.raster.sum()) == i.mask_area_px
+    plain, _ = parse_sam_stream(SYNTH_STREAM)
+    assert all(i.raster is None for i in plain)
+
+
+@check("harness: overlay picker renders overlays and demands rasters")
+def _():
+    import numpy as _np
+    from jaga.harness import overlay_picker
+    from jaga.sam_runner import ClipRun, KeyframeResult
+    from jaga.sam_parse import Instance
+    from jaga.overlays import encode_png as _enc
+    frame = ROOT / "tests" / "fixtures" / "overlay_frame.png"
+    frame.write_bytes(_enc(_np.full((64, 64, 3), 120, dtype=_np.uint8)))
+    raster = _np.zeros((50, 20), dtype=bool)
+    raster[5:45, 3:17] = True
+    inst = Instance(object_id="0", box=(10, 10, 30, 60),
+                    mask_area_px=int(raster.sum()), mask_width=20,
+                    mask_height=50, centroid_xy=(10.0, 25.0),
+                    bottom_y=49, bottom_band_share=0.1,
+                    elongation=2.0, axis_tilt_deg=80.0, raster=raster)
+    kf = KeyframeResult(t_s=0.0, instances=[inst], parse_stats={},
+                        from_cache=True, images_billed=0)
+    run = ClipRun(clip_id="x", keyframes=[kf], frame_w=64, frame_h=64)
+    window = [(0.0, frame), (0.0, frame), (0.0, frame)]
+    urls, labels = overlay_picker(window, run)
+    assert len(urls) == 3 and urls[0].startswith("data:image/png;base64,")
+    assert "overlay" in labels[0]
+    inst.raster = None
+    try:
+        overlay_picker(window, run)
+    except ValueError:
+        pass
+    else:
+        raise AssertionError("missing raster did not raise")
+
+
+# --------------------------------------- parse (synthetic fixture)
+@check("parse: synthetic stream yields the recorded instance")
+def _():
+    insts, stats = parse_sam_stream(SYNTH_STREAM)
+    assert len(insts) == 1
+    i = insts[0]
+    assert i.box == (104, 20, 215, 228), i.box
+    assert i.mask_area_px == 11972, i.mask_area_px
+    assert stats["boxes_without_masks"] == 0
+
+
+@check("parse: numbers recompute from the raster (spec alignment)")
+def _():
+    import numpy as _np
+    from jaga.config import FEATURES as _F
+    i = parse_sam_stream(SYNTH_STREAM, keep_raster=True)[0][0]
+    ys, xs = _np.nonzero(i.raster)
+    assert abs(i.centroid_xy[0] - (float(xs.mean()) + 0.5)) < 1e-9
+    assert abs(i.centroid_xy[1] - (float(ys.mean()) + 0.5)) < 1e-9
+    assert i.bottom_y == int(ys.max())
+    band_top = i.mask_height * (1.0 - _F["bottom_band_frac"])
+    assert abs(i.bottom_band_share
+               - float((ys >= band_top).mean())) < 1e-9
+    fp = (i.box[1] + i.bottom_y + 1) / 240
+    assert abs(fp - (20 + int(ys.max()) + 1) / 240) < 1e-9
+    assert 0.0 < fp <= 1.0
+
+
+@check("parse: truncated streams raise, never read as results")
+def _():
+    for cut in (SYNTH_STREAM[:len(SYNTH_STREAM) // 2],
+                SYNTH_STREAM[:SYNTH_STREAM.index("response.completed")]):
+        try:
+            parse_sam_stream(cut)
+        except ValueError:
+            continue
+        raise AssertionError("truncated stream accepted")
+
+
+@check("parse: [DONE] is a sufficient but not necessary terminator")
+def _():
+    insts, _ = parse_sam_stream(SYNTH_STREAM.replace("data: [DONE]", ""))
+    assert len(insts) == 1
+
+
+@check("parse: inconsistent or corrupt stream content raises")
+def _():
+    box = "<|box;x1=104;y1=20;x2=214;y2=227;w=320;h=240|>"
+    variants = [
+        SYNTH_STREAM.replace("x2=214", "x2=224"),   # mask/box dims
+        SYNTH_STREAM.replace("x2=214", "x2=104"),   # degenerate box
+        SYNTH_STREAM.replace(box, box + box, 1),    # duplicate box
+    ]
+    i = SYNTH_STREAM.index("data=208")
+    variants.append(SYNTH_STREAM[:i + 40] + "####" + SYNTH_STREAM[i + 44:])
+    for v in variants:
+        try:
+            parse_sam_stream(v)
+        except ValueError:
+            continue
+        raise AssertionError("corrupt stream variant accepted")
+
+
+@check("runner: mismatched keyframe dimensions raise before any call")
+def _():
+    import jaga.sam_runner as sr
+
+    def transport(b, p):
+        raise RuntimeError("transport must not be called")
+    import tempfile
+    with tempfile.TemporaryDirectory() as td:
+        runner = sr.SamRunner(Path(td), transport)
+        frames = [(0.0, ROOT / "tests" / "fixtures" / "frame.png"),
+                  (0.5, ROOT / "tests" / "fixtures" / "overlay_frame.png")]
+        try:
+            runner.run_keyframes("clip", frames)
+        except ValueError:
+            return
+        raise AssertionError("mixed keyframe geometry accepted")
+
+
+@check("runner: a transport serving another model is refused")
+def _():
+    import jaga.sam_runner as sr
+    import tempfile
+
+    def transport(b, p):
+        raise RuntimeError("transport must not be called")
+    transport.model_id = "sam-other"
+    with tempfile.TemporaryDirectory() as td:
+        runner = sr.SamRunner(Path(td), transport)
+        try:
+            runner.run_keyframes(
+                "clip", [(0.0, ROOT / "tests" / "fixtures" / "frame.png")])
+        except ValueError:
+            return
+        raise AssertionError("model-mismatched transport accepted")
+
+
+@check("features: velocity across a missed keyframe is unmeasured")
+def _():
+    spec = [(0.0, [inst((100, 20, 150, 160), 40)]),
+            (0.5, []),
+            (1.0, [inst((100, 60, 150, 200), 40)])]
+    tracks, _ = build_tracks(spec, W, H)
+    assert len(tracks) == 1
+    f = tracks[0].frames[-1]
+    assert f.spans_gap is True and f.dt_s == 1.0
+    assert f.vy_hps is None and f.speed_hps is None
+
+
+@check("features: association is by box IoU")
+def _():
+    a = inst((100, 20, 150, 160), 40)
+    b = inst((105, 25, 155, 165), 40)
+    tracks, _ = build_tracks([(0.0, [a]), (0.5, [b])], W, H)
+    assert len(tracks) == 1 and len(tracks[0].frames) == 2
+    f = tracks[0].frames[-1]
+    assert f.match_iou is not None and 0.5 < f.match_iou < 1.0
+
+
+@check("features: incoherent producer geometry raises")
+def _():
+    bad = inst((100, 20, 150, 160), 40)
+    bad.mask_area_px = 999999
+    try:
+        build_tracks([(0.0, [bad])], W, H)
+    except ValueError:
+        pass
+    else:
+        raise AssertionError("area larger than the box accepted")
+    bad2 = inst((100, 20, 150, 160), 40)
+    bad2.bottom_y = 999
+    try:
+        build_tracks([(0.0, [bad2])], W, H)
+    except ValueError:
+        return
+    raise AssertionError("bottom_y outside the box accepted")
+
+
+@check("stillness: a too-short observed span is unknown (direct)")
+def _():
+    from jaga.features import stillness as _still
+    tracks, _ = build_tracks(
+        [(0.0, [inst((100, 20, 150, 160), 40)]),
+         (0.5, [inst((100, 20, 150, 160), 40)])], W, H)
+    assert _still(tracks[0], W, H) is None
+
+
+@check("rules: verdict carries the effective parameter snapshot")
+def _():
+    v = run_rules(FALL_FRAMES, timing(2.9, 3.7))
+    assert v.params["view"] == "side"
+    assert v.params["rules"]["descent_min_s"] == 0.4
+    assert v.params["stillness"]["stillness_min_span_s"] == 2.5
+    assert v.params["params_overridden"] is False
+    tracks, _ = build_tracks(FALL_FRAMES, W, H)
+    from jaga.rules import evaluate as _ev
+    v2 = _ev(tracks, W, H, timing=timing(2.9, 3.7),
+             params={"descent_min_s": 0.9})
+    assert v2.params["rules"]["descent_min_s"] == 0.9
+    assert v2.params["params_overridden"] is True
+
+
+@check("harness: a segment parse failure is pipeline_error, not a crash")
+def _():
+    import csv as _csv
+    from jaga.harness import run_clip
+
+    rows = list(_csv.DictReader(
+        (ROOT / "results" / "manifest_draft.csv").open()))
+    row = next(r for r in rows if r["clip_id"] == "urfall_adl-01_cam0")
+
+    class BoomRunner:
+        def run_keyframes(self, clip_id, window):
+            raise ValueError("corrupt evidence")
+    rec = run_clip(ROOT / row["video_path"], row, BoomRunner(),
+                   ROOT / "cache")
+    assert rec["outcome"] == "pipeline_error", rec["outcome"]
+    assert "corrupt evidence" in rec["segments"][0]["pipeline_error"]
+
+
+# ------------------------------------------------------- alerts (D2)
+@check("alerts: disposition mapping escalates uncertainty, never silence")
+def _():
+    from jaga.alerts import Disposition, tier_for, TIER_CHECK,         TIER_NONE, TIER_URGENT
+    assert tier_for(Disposition("c", "uncertain",
+                                "fall", True))[0] == TIER_URGENT
+    assert tier_for(Disposition("c", "fall_candidate"))[0] == TIER_URGENT
+    assert tier_for(Disposition("c", "uncertain",
+                                "benign", True))[0] == TIER_NONE
+    assert tier_for(Disposition("c", "uncertain",
+                                "uncertain", True))[0] == TIER_CHECK
+    assert tier_for(Disposition("c", "uncertain",
+                                None, False))[0] == TIER_CHECK
+    assert tier_for(Disposition("c", "negative"))[0] == TIER_NONE
+    t, reason = tier_for(Disposition("c", "uncertain",
+                                     pipeline_error="SAM down"))
+    assert t == TIER_CHECK and "fail-safe" in reason
+
+
+@check("alerts: acknowledgement stops escalation; silence escalates")
+def _():
+    from jaga.alerts import AlertLadder, Disposition
+    now = [1000.0]
+    ladder = AlertLadder(["nearby", "family"], ack_window_s=900.0,
+                         clock=lambda: now[0])
+    a = ladder.dispatch(Disposition("clip1", "uncertain", "fall", True))
+    assert a is not None and a.events[-1]["to"] == "nearby"
+    b = ladder.dispatch(Disposition("clip2", "uncertain"))
+    now[0] += 901.0
+    esc = ladder.tick()
+    assert {x.alert_id for x in esc} == {a.alert_id, b.alert_id}
+    assert a.events[-1]["kind"] == "escalated"
+    assert a.events[-1]["to"] == "family"
+    ladder.acknowledge(a.alert_id, "family")
+    now[0] += 5000.0
+    esc2 = ladder.tick()
+    assert {x.alert_id for x in esc2} == {b.alert_id}
+    assert b.state == "exhausted"
+    none_alert = ladder.dispatch(Disposition("clip3", "negative"))
+    assert none_alert is None and ladder.log[-1]["clip_id"] == "clip3"
+
+
+@check("alerts: the consent layer is a labeled mock, not wired in")
+def _():
+    from jaga.alerts import AlertLadder, ConsentProfile, Disposition
+    profile = ConsentProfile(rooms=["living room"], recipients=["x"])
+    d = profile.to_dict()
+    assert d["status"] == "designed, not implemented"
+    assert profile.implemented is False
+    ladder = AlertLadder(["nearby"], clock=lambda: 0.0)
+    a = ladder.dispatch(Disposition("clip", "uncertain", "fall", True))
+    assert a is not None  # dispatch ignores the mock entirely
 
 
 if __name__ == "__main__":

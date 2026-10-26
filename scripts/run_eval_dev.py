@@ -1,6 +1,11 @@
 """Dev harness driver: run manifest clips through the full pipeline.
 
-Usage: python scripts/run_eval_dev.py [n_falls] [n_adl]
+Usage: python scripts/run_eval_dev.py [n_falls] [n_adl] [evidence]
+
+evidence is the adjudicator image form: overlay (SPEC D3 form, the
+default), raw (pre-D3 iteration form), or none (traces only). The
+three forms exist so the D3 A/B/C comparison can run on the dev
+split; the scored form is adopted by dated spec amendment.
 
 Runs the first N fall and M ADL rows of the UR Fall manifest through
 gate, timing, SAM, rules, and (for fall_candidate and uncertain rules
@@ -19,7 +24,7 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "src"))
 
-from jaga.harness import cascade, run_clip          # noqa: E402
+from jaga.harness import cascade, overlay_picker, run_clip  # noqa: E402
 from jaga.sam_runner import SamRunner, helper_transport  # noqa: E402
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -44,7 +49,7 @@ def vm_transport(body: dict) -> dict:
         return json.loads(resp.read_text())
 
 
-def pick_images(window):
+def pick_raw_frames(window, run):
     chosen = [window[0], window[len(window) // 2], window[-1]]
     urls = ["data:image/png;base64,"
             + base64.b64encode(p.read_bytes()).decode()
@@ -53,21 +58,29 @@ def pick_images(window):
     return urls, labels
 
 
+PICKERS = {"overlay": overlay_picker, "raw": pick_raw_frames,
+           "none": lambda window, run: ([], [])}
+
+
 def main() -> None:
     n_falls = int(sys.argv[1]) if len(sys.argv) > 1 else 6
     n_adl = int(sys.argv[2]) if len(sys.argv) > 2 else 6
+    evidence = sys.argv[3] if len(sys.argv) > 3 else "overlay"
+    if evidence not in PICKERS:
+        raise SystemExit(f"evidence must be one of {sorted(PICKERS)}")
     rows = list(csv.DictReader((ROOT / "results" / "manifest_draft.csv").open()))
     selected = ([r for r in rows if r["label"] == "fall"][:n_falls]
                 + [r for r in rows if r["label"] != "fall"][:n_adl])
     cache_root = ROOT / "cache"
-    runner = SamRunner(cache_root, helper_transport(HELPER))
+    runner = SamRunner(cache_root, helper_transport(HELPER),
+                       keep_rasters=True)
     records = []
     for row in selected:
         video = (ROOT / row["video_path"] if row.get("video_path")
                  else ROOT / "data" / "ur_fall" / row["source_file"])
         rec = run_clip(video, row, runner, cache_root,
                        adjudicate_labels=ADJUDICATE_ON,
-                       transport=vm_transport, image_picker=pick_images)
+                       transport=vm_transport, image_picker=PICKERS[evidence])
         records.append(rec)
         print(f"{TAG}: {rec['clip_id']} ({rec['label']}) -> "
               f"{rec['outcome']} in {rec['wall_s']}s")

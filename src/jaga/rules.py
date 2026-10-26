@@ -93,6 +93,12 @@ class RulesVerdict:
     phases: dict = field(default_factory=dict)
     reasons: list[str] = field(default_factory=list)
     config_hash: str = ""       # stamped by evaluate()
+    # The effective parameter VALUES that produced this verdict
+    # (rules + view + stillness), snapshotted by _evaluate. A hash
+    # alone cannot be read back without the historical config, and
+    # it does not move when a caller overrides a parameter; this
+    # snapshot can and does. params_overridden flags dev overrides.
+    params: dict = field(default_factory=dict)
     alternatives: list[dict] = field(default_factory=list)
     # every (track, window) evaluation that did not win, compact:
     # {track_id, onset_s, label, first_reason} — a negative result
@@ -136,10 +142,10 @@ def _windows_for_track(track: Track, timing: TimingResult | None,
     best = None
     gap_points = 0
     for a, b in zip(frames, frames[1:]):
-        if b.vy_hps is None or b.vy_hps < p["descent_vy_min_hps"]:
-            continue
         if b.spans_gap:
             gap_points += 1
+            continue
+        if b.vy_hps is None or b.vy_hps < p["descent_vy_min_hps"]:
             continue
         if best is None or b.vy_hps > best[2]:
             best = (a.t_s, b.t_s, b.vy_hps)
@@ -389,10 +395,21 @@ def _evaluate(tracks: list[Track], frame_w: int, frame_h: int,
                  FEATURES["min_person_area_frac"])
     if params:
         p.update(params)
+    from .config import FEATURES as _F
+    snapshot = {
+        "view": view,
+        "rules": dict(p),
+        "stillness": {k: _F[k] for k in (
+            "stillness_window_s", "stillness_min_span_s",
+            "stillness_max_gap_s")},
+        "params_overridden": bool(params),
+    }
     usable = [t for t in tracks if len(t.frames) >= p["min_track_frames"]]
     if not usable:
-        return RulesVerdict("no_evidence", None, None,
-                            reasons=["no track with enough keyframes"])
+        v = RulesVerdict("no_evidence", None, None,
+                         reasons=["no track with enough keyframes"])
+        v.params = snapshot
+        return v
     verdicts = [_evaluate_track(t, timing, frame_w, frame_h, p)
                 for t in usable]
     # Rank by label, then phase progress, then evidence mass: when
@@ -417,6 +434,7 @@ def _evaluate(tracks: list[Track], frame_w: int, frame_h: int,
         best.reasons.append(
             f"verdict from track {best.track_id} of {len(verdicts)} "
             "evaluated tracks")
+    best.params = snapshot
     return best
 
 
@@ -426,10 +444,12 @@ def evaluate(tracks: list[Track], frame_w: int, frame_h: int,
              view: str = "side") -> RulesVerdict:
     """Evaluate the rules state machine (see _evaluate).
 
-    Every verdict is stamped with the current config hash, so a result
-    record can always be tied to the parameter set that produced it.
-    The params argument is a development facility: verdicts produced
-    with overrides carry the base config hash and must not be scored.
+    Every verdict is stamped with the current config hash AND a
+    snapshot of the effective parameter values (verdict.params), so
+    a result record can be reproduced from the record alone. The
+    params argument is a development facility: overridden verdicts
+    carry params_overridden=True in that snapshot and must not be
+    scored.
     """
     from .config import config_hash
     v = _evaluate(tracks, frame_w, frame_h, timing=timing, params=params,

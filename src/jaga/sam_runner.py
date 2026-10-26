@@ -38,7 +38,14 @@ DEFAULT_PROMPT = "person"
 
 
 def helper_transport(helper: Path) -> Transport:
-    """Transport that calls the build VM's Meta Model API helper."""
+    """Transport that calls the build VM's Meta Model API helper.
+
+    The helper's sam-image command serves exactly one model
+    (sam-3.1, fixed server-side; it takes no model argument), so the
+    returned callable declares model_id: a SamRunner configured for
+    any other model refuses to run on it rather than stamping a
+    provenance record with a model that was never requested.
+    """
     def _call(image_bytes: bytes, prompt: str) -> str:
         with tempfile.TemporaryDirectory(prefix="jaga-sam-") as td:
             img = Path(td) / "frame.png"
@@ -53,6 +60,7 @@ def helper_transport(helper: Path) -> Transport:
                     f"SAM helper failed ({proc.returncode}): "
                     f"{(proc.stderr or proc.stdout)[-400:]}")
             return out.read_text()
+    _call.model_id = DEFAULT_MODEL  # type: ignore[attr-defined]
     return _call
 
 
@@ -176,7 +184,12 @@ class ClipRun:
             "frame_h": self.frame_h,
             "api_calls": self.api_calls,
             "cache_hits": self.cache_hits,
-            "images_billed": self.images_billed,
+            # None when incomplete (mirrors est_cost_usd): an
+            # understated integer next to a null cost would read as
+            # a measured count.
+            "images_billed": (self.images_billed if self.cost_complete
+                              else None),
+            "billing_mode": "per_image",
             "cost_complete": self.cost_complete,
             "est_cost_usd": (None if self.est_cost_usd is None
                              else round(self.est_cost_usd, 4)),
@@ -220,13 +233,17 @@ class ClipRun:
 class SamRunner:
     def __init__(self, cache_dir: Path, transport: Transport,
                  model: str = DEFAULT_MODEL, prompt: str = DEFAULT_PROMPT,
-                 fail_on_anomaly: bool = True):
+                 fail_on_anomaly: bool = True,
+                 keep_rasters: bool = False):
         self.cache_dir = Path(cache_dir) / "sam"
         self.cache_dir.mkdir(parents=True, exist_ok=True)
         self.transport = transport
         self.model = model
         self.prompt = prompt
         self.fail_on_anomaly = fail_on_anomaly
+        # Rasters are evidence-rendering material (SPEC D3 overlays);
+        # they ride on the instances and are never serialized.
+        self.keep_rasters = keep_rasters
 
     def _cache_path(self, image_bytes: bytes) -> Path:
         key = hashlib.sha256(
@@ -238,6 +255,12 @@ class SamRunner:
                       frames: list[tuple[float, Path]]) -> ClipRun:
         if not frames:
             raise ValueError("run_keyframes needs at least one frame")
+        served = getattr(self.transport, "model_id", None)
+        if served is not None and served != self.model:
+            raise ValueError(
+                f"transport serves model {served!r} but this runner "
+                f"is configured for {self.model!r}; refusing to stamp "
+                "the run with a model that was never requested")
         frame_w, frame_h = _png_size(frames[0][1])
         for t_s, path in frames[1:]:
             if _png_size(path) != (frame_w, frame_h):
@@ -254,13 +277,15 @@ class SamRunner:
             cache_path = self._cache_path(image_bytes)
             if cache_path.exists():
                 stream = cache_path.read_text()
-                instances, stats = parse_sam_stream(stream)
+                instances, stats = parse_sam_stream(
+                    stream, keep_raster=self.keep_rasters)
                 run.keyframes.append(KeyframeResult(
                     t_s=t_s, instances=instances, parse_stats=stats,
                     from_cache=True, images_billed=0))
             else:
                 stream = self.transport(image_bytes, self.prompt)
-                instances, stats = parse_sam_stream(stream)
+                instances, stats = parse_sam_stream(
+                    stream, keep_raster=self.keep_rasters)
                 cache_path.write_text(stream)
                 run.keyframes.append(KeyframeResult(
                     t_s=t_s, instances=instances, parse_stats=stats,
