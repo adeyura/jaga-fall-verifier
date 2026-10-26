@@ -1,0 +1,23 @@
+# Secrets — never commit, in any commit, ever
+.env
+*.key
+*api_key*
+*secret*
+
+# Dataset media — datasets enter this repo only as download scripts,
+# a clip manifest, and checksums. No media files, ever.
+data/
+*.mp4
+*.avi
+*.mov
+*.mkv
+*.webm
+
+# Caches and run artifacts (regenerable)
+cache/
+__pycache__/
+*.pyc
+.pytest_cache/
+
+# OS noise
+.DS_Store
