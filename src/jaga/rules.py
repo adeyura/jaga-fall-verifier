@@ -78,9 +78,11 @@ class RulesVerdict:
     timing_source: str | None   # "local" | "keyframes" | None
     phases: dict = field(default_factory=dict)
     reasons: list[str] = field(default_factory=list)
+    config_hash: str = ""       # the frozen-config hash this verdict
+                                # was produced under (config.config_hash)
 
 
-def evaluate(tracks: list[Track], frame_w: int, frame_h: int,
+def _evaluate(tracks: list[Track], frame_w: int, frame_h: int,
              timing: TimingResult | None = None,
              params: dict | None = None) -> RulesVerdict:
     p = dict(RULES)
@@ -96,6 +98,7 @@ def evaluate(tracks: list[Track], frame_w: int, frame_h: int,
     t_first, t_last = frames[0].t_s, frames[-1].t_s
 
     # --- descent: locate the descent window --------------------------
+    fallback_gap_points = 0
     descent_iv = None
     timing_source = None
     if timing is not None and timing.descent is not None:
@@ -104,14 +107,24 @@ def evaluate(tracks: list[Track], frame_w: int, frame_h: int,
             descent_iv = (d.onset_s, d.offset_s, d.duration_s)
             timing_source = "local"
     if descent_iv is None:
+        # Keyframe fallback. A velocity measured across a missed-
+        # keyframe gap is an average over the gap, not a descent
+        # sample: such points are skipped as descent evidence and the
+        # skip is counted in the phase record.
         best = None
+        gap_points = 0
         for a, b in zip(frames, frames[1:]):
-            if b.vy_hps is not None and b.vy_hps >= p["descent_vy_min_hps"]:
-                if best is None or b.vy_hps > best[2]:
-                    best = (a.t_s, b.t_s, b.vy_hps)
+            if b.vy_hps is None or b.vy_hps < p["descent_vy_min_hps"]:
+                continue
+            if b.spans_gap:
+                gap_points += 1
+                continue
+            if best is None or b.vy_hps > best[2]:
+                best = (a.t_s, b.t_s, b.vy_hps)
         if best is not None:
             descent_iv = (best[0], best[1], best[1] - best[0])
             timing_source = "keyframes"
+        fallback_gap_points = gap_points
 
     phases: dict[str, PhaseEvidence] = {}
     if descent_iv is None:
@@ -121,9 +134,12 @@ def evaluate(tracks: list[Track], frame_w: int, frame_h: int,
                             ["no descent evidence"])
     onset, offset, duration = descent_iv
     in_window = p["descent_min_s"] <= duration <= p["descent_max_s"]
-    phases["descent"] = PhaseEvidence(in_window, {
+    descent_detail = {
         "onset_s": round(onset, 2), "offset_s": round(offset, 2),
-        "duration_s": round(duration, 2), "source": timing_source})
+        "duration_s": round(duration, 2), "source": timing_source}
+    if timing_source == "keyframes":
+        descent_detail["gap_points_skipped"] = fallback_gap_points
+    phases["descent"] = PhaseEvidence(in_window, descent_detail)
     if not in_window:
         return RulesVerdict("negative", track.track_id, timing_source,
                             phases,
@@ -184,3 +200,17 @@ def evaluate(tracks: list[Track], frame_w: int, frame_h: int,
                             ["no classifiable keyframes before the descent"])
     return RulesVerdict("fall_candidate", track.track_id, timing_source,
                         phases, ["all four phases satisfied"])
+
+
+def evaluate(tracks: list[Track], frame_w: int, frame_h: int,
+             timing: TimingResult | None = None,
+             params: dict | None = None) -> RulesVerdict:
+    """Evaluate the rules state machine (see _evaluate).
+
+    Every verdict is stamped with the current config hash, so a result
+    record can always be tied to the parameter set that produced it.
+    """
+    from .config import config_hash
+    v = _evaluate(tracks, frame_w, frame_h, timing=timing, params=params)
+    v.config_hash = config_hash()
+    return v

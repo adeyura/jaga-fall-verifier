@@ -100,7 +100,10 @@ def _axis_features(xs: np.ndarray, ys: np.ndarray
     vx, vy = float(evecs[0, 1]), float(evecs[1, 1])
     tilt = math.degrees(math.atan2(abs(vy), abs(vx)))  # folds axis to [0, 90]
     if lam_min <= 1e-9:
-        return None, tilt
+        # Collinear: a direction exists on paper, but a one-pixel-wide
+        # mask carries no body-axis evidence. Report no axis at all
+        # rather than a precise-looking tilt built on nothing.
+        return None, None
     return math.sqrt(lam_max / lam_min), tilt
 
 

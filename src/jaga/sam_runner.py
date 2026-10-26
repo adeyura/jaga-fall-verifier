@@ -65,9 +65,28 @@ def _png_size(path: Path) -> tuple[int, int]:
     return w, h
 
 
-def _images_processed(stream_text: str) -> int:
+def _images_processed(stream_text: str) -> int | None:
+    """Images the API reports processing, or None when it does not say.
+
+    Absent accounting is recorded as unknown, never defaulted to a
+    plausible number: a silently assumed 1 would understate cost in
+    exactly the runs nobody re-checks.
+    """
     m = re.search(r'"images_processed"\s*:\s*(\d+)', stream_text)
-    return int(m.group(1)) if m else 1
+    return int(m.group(1)) if m else None
+
+
+class AnomalyError(ValueError):
+    """The scored-path anomaly gate fired; carries the run record.
+
+    The per-keyframe provenance that identifies the offending evidence
+    travels with the exception, so a harness can persist the record
+    and fail, instead of losing both.
+    """
+
+    def __init__(self, message: str, run: "ClipRun"):
+        super().__init__(message)
+        self.run = run
 
 
 @dataclass
@@ -76,7 +95,7 @@ class KeyframeResult:
     instances: list[Instance]
     parse_stats: dict
     from_cache: bool
-    images_billed: int
+    images_billed: int | None     # None = the API did not report it
 
 
 @dataclass
@@ -87,6 +106,9 @@ class ClipRun:
     track_stats: dict = field(default_factory=dict)
     frame_w: int = 0
     frame_h: int = 0
+    model: str = ""               # stamped by SamRunner for the record
+    prompt: str = ""
+    fail_on_anomaly: bool = True
 
     @property
     def anomalies(self) -> dict:
@@ -99,7 +121,7 @@ class ClipRun:
         scored as "no person."
         """
         out = {"boxes_without_masks": 0, "text_records": 0,
-               "tiny_instances": 0}
+               "tiny_instances": 0, "masks_superseded": 0}
         for k in self.keyframes:
             for key in out:
                 out[key] += k.parse_stats.get(key, 0)
@@ -119,10 +141,18 @@ class ClipRun:
 
     @property
     def images_billed(self) -> int:
-        return sum(k.images_billed for k in self.keyframes)
+        return sum(k.images_billed or 0 for k in self.keyframes)
 
     @property
-    def est_cost_usd(self) -> float:
+    def cost_complete(self) -> bool:
+        """False when any live call's image count went unreported."""
+        return all(k.images_billed is not None
+                   for k in self.keyframes if not k.from_cache)
+
+    @property
+    def est_cost_usd(self) -> float | None:
+        if not self.cost_complete:
+            return None
         return self.images_billed * SAM_IMAGE_USD
 
     @property
@@ -138,13 +168,18 @@ class ClipRun:
         return {
             "clip_id": self.clip_id,
             "config_hash": config_hash(),
+            "model": self.model,
+            "prompt": self.prompt,
+            "fail_on_anomaly": self.fail_on_anomaly,
             "anomalies": self.anomalies,
             "frame_w": self.frame_w,
             "frame_h": self.frame_h,
             "api_calls": self.api_calls,
             "cache_hits": self.cache_hits,
             "images_billed": self.images_billed,
-            "est_cost_usd": round(self.est_cost_usd, 4),
+            "cost_complete": self.cost_complete,
+            "est_cost_usd": (None if self.est_cost_usd is None
+                             else round(self.est_cost_usd, 4)),
             "empty_keyframes": self.empty_keyframes,
             "track_stats": self.track_stats,
             "keyframes": [{
@@ -204,7 +239,15 @@ class SamRunner:
         if not frames:
             raise ValueError("run_keyframes needs at least one frame")
         frame_w, frame_h = _png_size(frames[0][1])
-        run = ClipRun(clip_id=clip_id, frame_w=frame_w, frame_h=frame_h)
+        for t_s, path in frames[1:]:
+            if _png_size(path) != (frame_w, frame_h):
+                raise ValueError(
+                    f"{clip_id}: keyframe at {t_s}s has different "
+                    f"dimensions than the first keyframe; refusing to "
+                    "score mixed geometry against one frame size")
+        run = ClipRun(clip_id=clip_id, frame_w=frame_w, frame_h=frame_h,
+                      model=self.model, prompt=self.prompt,
+                      fail_on_anomaly=self.fail_on_anomaly)
         track_input: list[tuple[float, list[Instance]]] = []
         for t_s, path in frames:
             image_bytes = path.read_bytes()
@@ -227,8 +270,8 @@ class SamRunner:
         run.tracks, run.track_stats = build_tracks(
             track_input, frame_w, frame_h)
         if self.fail_on_anomaly and run.anomaly_total:
-            raise ValueError(
+            raise AnomalyError(
                 f"{clip_id}: SAM returned evidence that did not become "
                 f"instances: {run.anomalies}. Refusing to score this "
-                "clip as if that evidence did not exist.")
+                "clip as if that evidence did not exist.", run)
         return run

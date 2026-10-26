@@ -97,6 +97,21 @@ def build_tracks(keyframes: list[tuple[float, list[Instance]]],
         iou_threshold = FEATURES["iou_threshold"]
     if max_missed is None:
         max_missed = FEATURES["max_missed_keyframes"]
+    if not (0.0 < iou_threshold <= 1.0) or max_missed < 0:
+        raise ValueError(
+            f"invalid association parameters: iou_threshold="
+            f"{iou_threshold}, max_missed={max_missed}")
+    for t_s, instances in keyframes:
+        for inst in instances:
+            left, top, right, bottom = inst.box
+            if right <= left or bottom <= top:
+                raise ValueError(
+                    f"degenerate box for instance {inst.object_id}: "
+                    f"{inst.box}")
+            if left < 0 or top < 0 or right > frame_w or bottom > frame_h:
+                raise ValueError(
+                    f"box for instance {inst.object_id} lies outside "
+                    f"the {frame_w}x{frame_h} frame: {inst.box}")
     tracks: list[Track] = []
     next_id = 0
     prev_t: float | None = None

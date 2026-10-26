@@ -37,10 +37,12 @@ def main() -> None:
     out_dir.mkdir(parents=True, exist_ok=True)
     (out_dir / f"{clip_id}.json").write_text(
         json.dumps(run.to_dict(), indent=2))
+    cost = ("unknown" if run.est_cost_usd is None
+            else f"${run.est_cost_usd:.4f}")
     print(f"{TAG}: {clip_id}: {len(frames)} keyframes, "
           f"{run.api_calls} API calls, {run.cache_hits} cache hits, "
-          f"est ${run.est_cost_usd:.4f}, {run.empty_keyframes} empty, "
-          f"tracks {run.track_stats}")
+          f"est {cost}, {run.empty_keyframes} empty, "
+          f"tracks {run.track_stats}, anomalies {run.anomalies}")
 
 
 if __name__ == "__main__":
