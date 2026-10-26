@@ -126,7 +126,7 @@ _ORDER = {"fall_candidate": 0, "uncertain": 1, "negative": 2}
 
 
 def _windows_for_track(track: Track, timing: TimingResult | None,
-                       p: dict) -> list[_Window]:
+                       p: dict) -> tuple[list[_Window], dict]:
     frames = track.frames
     t_first, t_last = frames[0].t_s, frames[-1].t_s
     slack = p["overlap_slack_s"]
@@ -142,7 +142,8 @@ def _windows_for_track(track: Track, timing: TimingResult | None,
                             run_onset_s=iv.onset_s)
                 windows.append(w)
     if windows:
-        return windows
+        return windows, {"gap_points_on_track": 0,
+                         "low_iou_points_skipped": 0}
     best = None
     gap_points = 0
     low_iou_points = 0
@@ -162,11 +163,14 @@ def _windows_for_track(track: Track, timing: TimingResult | None,
         if best is None or b.vy_hps > best[2]:
             best = (a.t_s, b.t_s, b.vy_hps, b.match_iou)
     if best is not None:
-        return [_Window(best[0], best[1], None, "keyframes",
-                        gap_points=gap_points, vy_hps=best[2],
-                        match_iou=best[3],
-                        low_iou_points=low_iou_points)]
-    return []
+        return ([_Window(best[0], best[1], None, "keyframes",
+                         gap_points=gap_points, vy_hps=best[2],
+                         match_iou=best[3],
+                         low_iou_points=low_iou_points)],
+                {"gap_points_on_track": gap_points,
+                 "low_iou_points_skipped": low_iou_points})
+    return [], {"gap_points_on_track": gap_points,
+                "low_iou_points_skipped": low_iou_points}
 
 
 def _evaluate_window(track: Track, w: _Window, frame_w: int,
@@ -376,9 +380,18 @@ def _progress(v: RulesVerdict) -> int:
 def _evaluate_track(track: Track, timing: TimingResult | None,
                     frame_w: int, frame_h: int, p: dict,
                     still: dict | None = None) -> RulesVerdict:
-    windows = _windows_for_track(track, timing, p)
+    windows, fb_stats = _windows_for_track(track, timing, p)
     if not windows:
-        return _evaluate_track_no_descent(track, p)
+        v = _evaluate_track_no_descent(track, p)
+        # The fallback's rejection counts are evidence too: a clip
+        # whose only fast step was distrusted (gap / weak
+        # association) must not read identically to one with no
+        # fast step at all.
+        if any(fb_stats.values()):
+            d = v.phases.get("descent")
+            if d is not None:
+                d.detail.update(fb_stats)
+        return v
     verdicts = [_evaluate_window(track, w, frame_w, frame_h, p, still)
                 for w in windows]
 

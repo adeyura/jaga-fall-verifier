@@ -104,18 +104,28 @@ def run_clip(video: Path, row: dict, runner: SamRunner, cache_root: Path,
                  "evidence_form": evidence_form, "segments": []}
     try:
         rec["run_params"] = rules_mod.params_snapshot(rec["view"])
-    except ValueError:
-        rec["run_params"] = None  # bogus view: segments will record
-                                  # the failure; the record stays honest
+    except ValueError as e:
+        # An invalid view is a configuration failure: the clip is a
+        # pipeline error NOW, never a gate miss scored by default.
+        rec["run_params"] = None
+        rec["outcome"] = "pipeline_error"
+        rec["error"] = f"{type(e).__name__}: {e}"
+        return rec
     if "view" not in row:
         # A missing view column must never silently evaluate a
         # ceiling clip under the side model (the original shakedown
         # failure). The default is recorded loudly in the clip record.
         rec["view_defaulted"] = True
     t0 = time.monotonic()
-    duration = probe_duration(video)
-    rec["duration_s"] = round(duration, 2)
-    segments, gate_stats = gate_clip(video, duration)
+    try:
+        duration = probe_duration(video)
+        rec["duration_s"] = round(duration, 2)
+        segments, gate_stats = gate_clip(video, duration)
+    except Exception as e:
+        rec["outcome"] = "pipeline_error"
+        rec["error"] = f"probe/gate stage: {type(e).__name__}: {e}"
+        rec["wall_s"] = round(time.monotonic() - t0, 2)
+        return rec
     from dataclasses import asdict
     rec["gate"] = {"n_segments": len(segments),
                    "flagged_s": round(sum(s.end_s - s.start_s
@@ -127,7 +137,13 @@ def run_clip(video: Path, row: dict, runner: SamRunner, cache_root: Path,
         rec["wall_s"] = round(time.monotonic() - t0, 2)
         return rec
 
-    timing = timing_from_video(video)
+    try:
+        timing = timing_from_video(video)
+    except Exception as e:
+        rec["outcome"] = "pipeline_error"
+        rec["error"] = f"timing stage: {type(e).__name__}: {e}"
+        rec["wall_s"] = round(time.monotonic() - t0, 2)
+        return rec
     rec["timing_descent"] = (
         None if timing.descent is None else {
             "onset_s": round(timing.descent.onset_s, 2),
@@ -135,7 +151,13 @@ def run_clip(video: Path, row: dict, runner: SamRunner, cache_root: Path,
             "run_duration_s": round(timing.descent.duration_s, 2),
             "peak_area_frac": round(timing.descent.peak_area_frac, 3)})
     frames_dir = cache_root / "keyframes" / clip_id
-    all_frames = sample_frames(video, frames_dir, keyframe_fps)
+    try:
+        all_frames = sample_frames(video, frames_dir, keyframe_fps)
+    except Exception as e:
+        rec["outcome"] = "pipeline_error"
+        rec["error"] = f"frame sampling: {type(e).__name__}: {e}"
+        rec["wall_s"] = round(time.monotonic() - t0, 2)
+        return rec
     labels: list[str] = []
     for seg in segments:
         seg_rec: dict = {"start_s": round(seg.start_s, 2),
@@ -157,10 +179,11 @@ def run_clip(video: Path, row: dict, runner: SamRunner, cache_root: Path,
             rec["outcome"] = "pipeline_error"
             rec["wall_s"] = round(time.monotonic() - t0, 2)
             return rec
-        except ValueError as e:
-            # A parse/validation failure on this segment's evidence:
-            # the clip is a pipeline failure, never a negative, and
-            # the batch survives to score the remaining clips.
+        except Exception as e:
+            # Any other failure from the SAM stage — transport
+            # RuntimeError, subprocess timeout, OS error: the clip
+            # is a pipeline failure, never a negative, and the batch
+            # survives to score the remaining clips.
             seg_rec["pipeline_error"] = f"{type(e).__name__}: {e}"
             rec["segments"].append(seg_rec)
             rec["outcome"] = "pipeline_error"

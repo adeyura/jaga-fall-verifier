@@ -4,11 +4,14 @@ Run:  PYTHONPATH=<meta_sam_parser site-packages>:src \
         python3 tests/run_checks.py
 
 Plain asserts, no framework: this file is the protection the frozen
-run relies on, so it must run anywhere the pipeline runs. The SAM
-stream fixture (a real captured response) is dataset-derived data and
-is NOT committed; checks that need it look for it in the locations in
-_FIXTURE_CANDIDATES or $JAGA_FIXTURE and skip with a notice when it is
-absent. Every other check is self-contained.
+run relies on, so it must run anywhere the pipeline runs. Every
+check is self-contained against committed fixtures: the synthetic
+SAM stream (a real captured response to an AI-generated image — the
+dataset-derived stream cannot be committed under its license, so
+its scenarios are carried as fail-closed mutations of the synthetic
+one) and a synthetic video. The scored configuration is the plain
+invocation above: strict mode is the default (any SKIP fails the
+run); JAGA_STRICT=0 opts out for exploratory runs only.
 """
 import json
 import math
@@ -28,17 +31,12 @@ from jaga.sam_parse import Instance, _axis_features          # noqa: E402
 from jaga.timing import Interval, TimingResult, analyze      # noqa: E402
 
 ROOT = Path(__file__).resolve().parents[1]
-_FIXTURE_CANDIDATES = [
-    os.environ.get("JAGA_FIXTURE", ""),
-    str(ROOT / "tests" / "fixtures" / "sam_stream_adl01.txt"),
-    "/tmp/jaga-cache/hour3/sam_stream_adl01.txt",
-]
-FIXTURE = next((p for p in _FIXTURE_CANDIDATES if p and Path(p).exists()),
-               None)
 # Committed synthetic fixture: a real SAM stream elicited from an
 # AI-generated mannequin image (no dataset content, no real person).
 # Always present, so the parse protections are exercised in every
-# checkout; the dataset-derived fixture above is a local extra.
+# checkout. (The dataset-derived stream used during development is
+# uncommittable under its license; its error scenarios live here as
+# mutations of this stream.)
 SYNTH = ROOT / "tests" / "fixtures" / "sam_stream_synth.txt"
 SYNTH_STREAM = SYNTH.read_text() if SYNTH.exists() else None
 
@@ -548,67 +546,54 @@ def _():
 
 
 # ------------------------------------------------------- parse (fixture)
-if FIXTURE:
-    stream = Path(FIXTURE).read_text()
-    from jaga.sam_parse import parse_sam_stream
+from jaga.sam_parse import parse_sam_stream
 
-    @check("parse: real stream yields the two known instances")
-    def _():
-        insts, stats = parse_sam_stream(stream)
-        assert sorted(i.mask_area_px for i in insts) == [4178, 4902]
-        assert stats["boxes_without_masks"] == 0
-        assert stats["tiny_instances"] == 0
 
-    @check("parse: garbage SSE line raises")
-    def _():
-        try:
-            parse_sam_stream("this is not an SSE line\n" + stream)
-        except ValueError:
-            return
-        raise AssertionError("garbage line skipped")
+@check("parse: garbage SSE line raises")
+def _():
+    try:
+        parse_sam_stream("this is not an SSE line\n" + SYNTH_STREAM)
+    except ValueError:
+        return
+    raise AssertionError("garbage line skipped")
 
-    @check("parse: malformed data payload raises as ValueError")
-    def _():
-        try:
-            parse_sam_stream("data: {broken\n" + stream)
-        except ValueError:
-            return
-        raise AssertionError("malformed payload accepted")
 
-    @check("parse: mask without a box raises")
-    def _():
-        import re as _re
-        out, removed = [], 0
-        for ln in stream.splitlines():
-            if ln.startswith("data:"):
-                try:
-                    ev = json.loads(ln[5:])
-                except Exception:
-                    out.append(ln)
-                    continue
-                for key in ("delta", "text"):
-                    val = ev.get(key)
-                    if isinstance(val, str) and "<|box;" in val and removed == 0:
-                        v2 = _re.sub(r"0<\|box;[^|]*\|>", "0", val, count=1)
-                        if v2 != val:
-                            ev[key] = v2
-                            removed += 1
-                out.append("data: " + json.dumps(ev))
-            else:
+@check("parse: malformed data payload raises as ValueError")
+def _():
+    try:
+        parse_sam_stream("data: {broken\n" + SYNTH_STREAM)
+    except ValueError:
+        return
+    raise AssertionError("malformed payload accepted")
+
+
+@check("parse: mask without a box raises")
+def _():
+    import re as _re
+    out, removed = [], 0
+    for ln in SYNTH_STREAM.splitlines():
+        if ln.startswith("data:"):
+            try:
+                ev = json.loads(ln[5:])
+            except Exception:
                 out.append(ln)
-        assert removed == 1
-        try:
-            parse_sam_stream("\n".join(out))
-        except ValueError:
-            return
-        raise AssertionError("boxless mask accepted")
-else:
-    if os.environ.get("JAGA_STRICT") != "1":
-        # Informational only outside strict mode: the committed
-        # synthetic fixture carries the parse protections, so a
-        # missing dataset fixture must not fail a strict run.
-        skip("parse: fixture checks", "no SAM stream fixture found")
-
+                continue
+            for key in ("delta", "text"):
+                val = ev.get(key)
+                if isinstance(val, str) and "<|box;" in val and removed == 0:
+                    v2 = _re.sub(r"0<\|box;[^|]*\|>", "0", val, count=1)
+                    if v2 != val:
+                        ev[key] = v2
+                        removed += 1
+            out.append("data: " + json.dumps(ev))
+        else:
+            out.append(ln)
+    assert removed == 1
+    try:
+        parse_sam_stream("\n".join(out))
+    except ValueError:
+        return
+    raise AssertionError("boxless mask accepted")
 
 # ------------------------------------------------------- runner
 @check("runner: anomaly gate includes superseded masks and carries the run")
@@ -658,9 +643,10 @@ def _():
     import jaga.sam_runner as sr
     import numpy as _np
     from jaga.overlays import encode_png as _enc
-    frame = ROOT / "tests" / "fixtures" / "attr_frame.png"
-    frame.write_bytes(_enc(_np.full((240, 320, 3), 90, dtype=_np.uint8)))
     with tempfile.TemporaryDirectory() as td:
+        frame = Path(td) / "attr_frame.png"
+        frame.write_bytes(
+            _enc(_np.full((240, 320, 3), 90, dtype=_np.uint8)))
         runner = sr.SamRunner(Path(td), lambda b, p: SYNTH_STREAM)
         run = runner.run_keyframes("clip", [(0.0, frame)])
         assert run.model is None
@@ -740,9 +726,10 @@ def _():
     import numpy as _np
     from jaga.overlays import encode_png, read_png_rgb
     img = _np.arange(4 * 5 * 3, dtype=_np.uint8).reshape(4, 5, 3)
-    p = ROOT / "tests" / "fixtures" / "overlay_roundtrip.png"
-    p.write_bytes(encode_png(img))
-    back = read_png_rgb(p)
+    with tempfile.TemporaryDirectory() as td:
+        p = Path(td) / "overlay_roundtrip.png"
+        p.write_bytes(encode_png(img))
+        back = read_png_rgb(p)
     assert back.shape == img.shape
     assert int(_np.abs(back.astype(int) - img.astype(int)).max()) <= 1
 
@@ -792,7 +779,8 @@ def _():
                         axis_tilt_deg=80.0, raster=raster)
         return inst
 
-    d = ROOT / "tests" / "fixtures"
+    import tempfile as _tf
+    d = Path(_tf.mkdtemp(prefix="jaga_picker_"))
     specs = [(0.0, 90, (4, 10, 20, 50)), (0.5, 130, (24, 10, 40, 50)),
              (1.0, 170, (44, 10, 60, 50))]
     window, kfs = [], []
@@ -1076,6 +1064,66 @@ def _():
                    ROOT / "cache")
     assert rec["outcome"] == "pipeline_error", rec["outcome"]
     assert "corrupt evidence" in rec["segments"][0]["pipeline_error"]
+
+    class CrashRunner:
+        def run_keyframes(self, clip_id, window):
+            raise RuntimeError("SAM helper failed (1): boom")
+    rec2 = run_clip(ROOT / row["video_path"], row, CrashRunner(),
+                    ROOT / "cache")
+    assert rec2["outcome"] == "pipeline_error", rec2["outcome"]
+    assert "RuntimeError" in rec2["segments"][0]["pipeline_error"]
+
+
+@check("features: mask dims, elongation, tilt ranges are enforced")
+def _():
+    from jaga.sam_parse import Instance
+
+    def inst(**kw):
+        base = dict(object_id="0", box=(10, 10, 60, 90),
+                    mask_area_px=2000, mask_width=50, mask_height=80,
+                    centroid_xy=(25.0, 40.0), bottom_y=70,
+                    bottom_band_share=0.1, elongation=1.6,
+                    axis_tilt_deg=80.0)
+        base.update(kw)
+        return Instance(**base)
+    good = [(0.0, [inst()])]
+    build_tracks(good, W, H)  # control: coherent geometry passes
+    for bad in (dict(mask_width=49), dict(elongation=0.5),
+                dict(elongation=60.0), dict(axis_tilt_deg=120.0)):
+        try:
+            build_tracks([(0.0, [inst(**bad)])], W, H)
+        except ValueError:
+            continue
+        raise AssertionError(f"incoherent geometry accepted: {bad}")
+
+
+@check("parse: a malformed parser result raises ValueError only")
+def _():
+    import meta_sam_parser as _msp
+    from jaga.sam_parse import parse_sam_stream as _parse
+
+    class _FakeParsed:
+        async def __aenter__(self):
+            return self
+
+        async def __aexit__(self, *a):
+            return False
+
+        async def final_result(self):
+            return object()  # no .outcome, no .diagnostics
+
+    real = _msp.parse_responses_stream
+    _msp.parse_responses_stream = lambda events, fmt: _FakeParsed()
+    try:
+        try:
+            _parse(SYNTH_STREAM)
+        except ValueError:
+            return
+        except AttributeError:
+            raise AssertionError("AttributeError escaped the contract")
+        raise AssertionError("malformed result accepted")
+    finally:
+        _msp.parse_responses_stream = real
 
 
 # ------------------------------------------------------- alerts (D2)

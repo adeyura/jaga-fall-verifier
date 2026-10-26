@@ -247,10 +247,15 @@ class SamRunner:
         # they ride on the instances and are never serialized.
         self.keep_rasters = keep_rasters
 
-    def _cache_path(self, image_bytes: bytes) -> Path:
+    def _cache_path(self, image_bytes: bytes,
+                    model_key: str | None = None) -> Path:
+        # The cache namespace names the model that SERVED the
+        # response (declared by the transport), not the configured
+        # one: two different undeclared transports must not share a
+        # namespace labeled with a model neither proved it served.
         key = hashlib.sha256(
-            self.model.encode() + b"\0" + self.prompt.encode()
-            + b"\0" + image_bytes).hexdigest()
+            (model_key or "undeclared").encode() + b"\0"
+            + self.prompt.encode() + b"\0" + image_bytes).hexdigest()
         return self.cache_dir / f"{key}.sse"
 
     def run_keyframes(self, clip_id: str,
@@ -276,7 +281,7 @@ class SamRunner:
         track_input: list[tuple[float, list[Instance]]] = []
         for t_s, path in frames:
             image_bytes = path.read_bytes()
-            cache_path = self._cache_path(image_bytes)
+            cache_path = self._cache_path(image_bytes, served)
             if cache_path.exists():
                 stream = cache_path.read_text()
                 instances, stats = parse_sam_stream(
