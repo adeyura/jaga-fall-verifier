@@ -156,7 +156,9 @@ def analyze(energy: np.ndarray, area_frac: np.ndarray,
         seg_af = af[i:j + 1]
         if seg_af.max() > high:
             peak_k = int(np.argmax(seg_af))
-            core_level = floor + p["core_frac"] * (seg_af[peak_k] - floor)
+            peak_ref = float(np.percentile(
+                seg_af, p["core_peak_percentile"]))
+            core_level = floor + p["core_frac"] * (peak_ref - floor)
             lo = peak_k
             while lo > 0 and seg_af[lo - 1] > core_level:
                 lo -= 1

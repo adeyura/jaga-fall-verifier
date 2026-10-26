@@ -45,6 +45,10 @@ TIMING = {
     "burst_low_frac": 0.2,       # hysteresis floor, same span
     "core_frac": 0.5,            # descent core: width at this fraction of
                                  # the peak's height above the floor
+    "core_peak_percentile": 90.0,  # the peak the core is measured
+                                 # against: a high percentile of the run,
+                                 # not the max — one-step spikes at impact
+                                 # otherwise shrink the core to the spike
     "min_span_abs": 0.005,       # below this p95-floor span the envelope
                                  # carries no usable signal at all
     "centroid_fill_max_gap_s": 1.0,  # diagnostics only: longest NaN gap

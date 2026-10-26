@@ -17,6 +17,16 @@ threshold iteration happens on the dev split only.
   camera (cam1) only, ADL the floor-parallel camera (cam0) only — a
   class-conditional camera confound. UR Fall results are reported with
   views stated and are never pooled with Le2i's room-corner views.
+  Every file is a side-by-side composite: depth map (left 320x240) and
+  RGB (right 320x240) in one 640x240 frame (visually verified
+  2026-10-27). The pipeline currently processes the composite as one
+  image; SAM segments the RGB half's person, and a persistent
+  ~150 px false-positive instance (a ceiling fixture in the RGB half)
+  appears in every cam1 keyframe. Cam1 event structure: the subject
+  enters from the frame's top edge and falls within about half a
+  second, so pre-descent SAM posture evidence is about one partial
+  keyframe (feet) by the dataset's construction; no SAM prompt variant
+  finds a standing person before entry because there is none in frame.
 - Target frozen set: ~90 clips — 30 falls, ~12 per hard-negative category
   (fast sit-down, bend to pick up, crouch, intentional lie-down,
   stumble-and-recover). Existing dataset labels only.
@@ -132,6 +142,33 @@ thing:
 - Association is box IoU, not mask IoU; mask rasters are not retained
   past feature extraction. Adjudicator overlays and the zoomed person
   crop need a raster path that does not exist yet.
+- Per-view evidence model (from the first dev shakedown, 2026-10-27):
+  the state machine's posture phases encode a side-view model (image
+  tilt ~ body orientation). In the ceiling view that mapping does not
+  exist, and pre-descent posture is unobservable by construction (see
+  the dataset note). The freeze must decide the ceiling view's
+  evidence model — candidates: pre-phase unobserved-by-construction
+  (rules ceiling = uncertain, adjudicator confirms from frames), or a
+  view-specific posture definition (elongation/area transition). The
+  same pass must decide whether the pipeline crops composites to the
+  RGB half, and whether instances under ~0.2% of frame area are
+  filtered as implausible persons (measured: artifact ~150 px, feet
+  at entry ~510 px, fallen person ~5,000 px, at 640x240).
+- Descent window floor: measured local-timing durations on the first
+  six cam1 falls (run lengths, pre-core revision) spread 0.20-1.13 s;
+  two falls sit under the spec's 0.4 s floor. The freeze must set the
+  window against the dev distribution of CORE durations, per view,
+  before any scored run.
+- Crop composites to the RGB half (measured 2026-10-27, hour 9): on
+  the composite, the depth half's speckle holds the timing floor at
+  0.036-0.068; on the RGB half alone the floor is 0.0001-0.041, fall
+  descent cores measure 0.23-1.27 s and the two ADL bursts 1.57-1.67 s.
+  Recommendation: crop (the RGB half is the camera view the spec
+  describes; the depth channel is a separate modality the design
+  never claimed). The descent window then needs its own per-view
+  setting against these distributions: cam1 fall cores cluster at
+  0.5-1.3 s, so the current [0.4, 1.0] window would still reject
+  real falls at its top edge.
 - The three DECISION NEEDED sections: recommendations on all three
   plus the dataset methodology were made on 2026-10-27; they wait
   for the author's approval and are not reproduced in this spec.

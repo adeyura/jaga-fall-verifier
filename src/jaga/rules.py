@@ -93,6 +93,11 @@ class RulesVerdict:
     phases: dict = field(default_factory=dict)
     reasons: list[str] = field(default_factory=list)
     config_hash: str = ""       # stamped by evaluate()
+    alternatives: list[dict] = field(default_factory=list)
+    # every (track, window) evaluation that did not win, compact:
+    # {track_id, onset_s, label, first_reason} — a negative result
+    # must show whether the real descent was among the rejected
+    # windows and what rejected it, not just the winning record.
 
 
 @dataclass
@@ -233,6 +238,22 @@ def _evaluate_track_no_descent(track: Track, p: dict) -> RulesVerdict:
         ["no descent evidence and no posture transition"])
 
 
+def _progress(v: RulesVerdict) -> int:
+    """How far a verdict got through the phases, for ranking negatives.
+
+    When every window is negative, the record worth showing is the one
+    that progressed furthest — it is the most informative rejection.
+    """
+    score = 0
+    for name in ("descent", "pre_posture", "post_posture", "stillness"):
+        ph = v.phases.get(name)
+        if ph is not None and ph.satisfied is True:
+            score += 1
+        else:
+            break
+    return score
+
+
 def _evaluate_track(track: Track, timing: TimingResult | None,
                     frame_w: int, frame_h: int, p: dict) -> RulesVerdict:
     windows = _windows_for_track(track, timing, p)
@@ -240,7 +261,18 @@ def _evaluate_track(track: Track, timing: TimingResult | None,
         return _evaluate_track_no_descent(track, p)
     verdicts = [_evaluate_window(track, w, frame_w, frame_h, p)
                 for w in windows]
-    best = min(verdicts, key=lambda v: _ORDER[v.label])
+    best = min(verdicts,
+               key=lambda v: (_ORDER[v.label], -_progress(v)))
+    for v in verdicts:
+        if v is best:
+            continue
+        d = v.phases.get("descent")
+        best.alternatives.append({
+            "track_id": v.track_id,
+            "onset_s": (None if d is None
+                        else d.detail.get("onset_s")),
+            "label": v.label,
+            "first_reason": v.reasons[0] if v.reasons else ""})
     if len(verdicts) > 1:
         best.reasons.append(
             f"best of {len(verdicts)} descent windows on this track")
@@ -259,7 +291,15 @@ def _evaluate(tracks: list[Track], frame_w: int, frame_h: int,
                             reasons=["no track with enough keyframes"])
     verdicts = [_evaluate_track(t, timing, frame_w, frame_h, p)
                 for t in usable]
-    best = min(verdicts, key=lambda v: _ORDER[v.label])
+    best = min(verdicts,
+               key=lambda v: (_ORDER[v.label], -_progress(v)))
+    for v in verdicts:
+        if v is best:
+            continue
+        best.alternatives.append({
+            "track_id": v.track_id, "onset_s": None, "label": v.label,
+            "first_reason": v.reasons[0] if v.reasons else ""})
+        best.alternatives.extend(v.alternatives)
     if len(verdicts) > 1:
         best.reasons.append(
             f"verdict from track {best.track_id} of {len(verdicts)} "

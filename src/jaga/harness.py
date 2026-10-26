@@ -95,6 +95,7 @@ def run_clip(video: Path, row: dict, runner: SamRunner, cache_root: Path,
         seg_rec["run"] = run.to_dict()
         seg_rec["rules_label"] = verdict.label
         seg_rec["rules_reasons"] = verdict.reasons
+        seg_rec["rules_alternatives"] = verdict.alternatives
         seg_rec["rules_phases"] = {
             name: {"satisfied": ph.satisfied, "detail": ph.detail}
             for name, ph in verdict.phases.items()}
