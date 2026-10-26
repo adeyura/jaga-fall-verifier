@@ -45,8 +45,19 @@ TIMING = {
     "max_duration_s": 3.0,
 }
 
+RULES = {
+    "upright_tilt_min_deg": 55.0,   # axis tilt at/above: upright posture
+    "horizontal_tilt_max_deg": 35.0,  # axis tilt at/below: horizontal
+    "min_elongation": 1.2,       # below this the axis is ill-defined
+    "descent_min_s": 0.4,        # SPEC: rapid descent window
+    "descent_max_s": 1.0,
+    "descent_vy_min_hps": 0.25,  # keyframe fallback: downward velocity
+    "stillness_max_disp_h": 0.03,  # trailing stillness ceiling, frame ht
+}
+
 
 def config_hash() -> str:
-    blob = json.dumps({"gate": GATE, "features": FEATURES, "timing": TIMING},
+    blob = json.dumps({"gate": GATE, "features": FEATURES, "timing": TIMING,
+                       "rules": RULES},
                       sort_keys=True).encode()
     return hashlib.sha256(blob).hexdigest()[:16]

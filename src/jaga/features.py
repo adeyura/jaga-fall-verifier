@@ -158,8 +158,15 @@ def build_tracks(keyframes: list[tuple[float, list[Instance]]],
 
 def stillness(track: Track, frame_w: int, frame_h: int,
               window_s: float | None = None,
-              min_span_s: float | None = None) -> float | None:
+              min_span_s: float | None = None,
+              after_s: float | None = None) -> float | None:
     """Max pairwise centroid displacement (frame heights) in the window.
+
+    The window is the trailing window_s of the track, optionally
+    restricted to frames at or after after_s. The restriction matters:
+    stillness is a claim about the period after an event, and a window
+    that reaches back across the descent itself would read the fall as
+    movement and condemn every real fall on a short track.
 
     Returns None when the window holds fewer than two observations or
     they span less than min_span_s of real time. Unknown is reported as
@@ -175,8 +182,11 @@ def stillness(track: Track, frame_w: int, frame_h: int,
     if not track.frames:
         return None
     end_t = track.frames[-1].t_s
+    start_t = end_t - window_s
+    if after_s is not None:
+        start_t = max(start_t, after_s)
     pts = [(f.centroid_x * (frame_w / frame_h), f.centroid_y, f.t_s)
-           for f in track.frames if f.t_s >= end_t - window_s]
+           for f in track.frames if f.t_s >= start_t]
     if len(pts) < 2 or pts[-1][2] - pts[0][2] < min_span_s:
         return None
     best = 0.0
