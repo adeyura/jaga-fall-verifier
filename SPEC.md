@@ -233,3 +233,15 @@ distribution check against the [0.4, 1.0] s window; the D3 evidence
 A/B/C on dev; dev/test split assignment in the manifest; the D2
 alert-ladder build; the SAM raster path the overlay evidence form
 needs; the outstanding re-verification of the parse/features unit.
+
+## Amendment 2026-10-27 (later): D3 scored evidence form adopted
+
+The D3 A/B/C comparison ran on the UR Fall dev shakedown set (6 ceiling falls, 6 side-view ADL; every fall escalated to the adjudicator by the ceiling cap; 2 ADL escalations adjudicated). Adjudicator outcomes (usable 8/8 in every form; no fall called benign in any form):
+
+- overlay (masks over blurred backgrounds + traces): falls 0 confirmed / 6 uncertain; ADL escalations 2/2 benign.
+- raw frames + traces: falls 3 confirmed / 3 uncertain; ADL escalations 2/2 benign.
+- traces only (no images): falls 3 confirmed / 3 uncertain; ADL escalations 2/2 benign.
+
+Recall to a human (fall or uncertain, the D1 not-missed definition) is identical across forms. Images added nothing over traces on this evidence, and the overlay form confirmed nothing: from a ceiling view, a mask silhouette over a blurred background carries too little posture information for the adjudicator to commit. ADOPTED: the scored evidence form is **traces only** (form C). It ties the best confirmation rate, and it is the strongest privacy form of the three — no image data of any kind leaves the machine in the evidence pack. The overlay form remains implemented and recorded as a non-scored form.
+
+Obligation carried forward: this set contains no side-view falls (UR Fall's confound). The A/B/C must be re-run on the UP-Fall dev split when it exists; if overlays confirm side-view falls materially better than traces there, a further dated amendment may adopt a per-view scored form before the gate run. The D1 gate runs under the form in force at that time, recorded on every result.
