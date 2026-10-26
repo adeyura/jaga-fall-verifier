@@ -1,39 +1,71 @@
 """Local motion gate: frame differencing before any API call.
 
 Design intent (SPEC.md): most footage never leaves the home. The gate
-decodes small grayscale frames, computes mean absolute difference between
-consecutive frames, and marks candidate segments where motion exceeds a
-threshold. Only candidate segments are worth SAM calls downstream.
+decodes small grayscale frames and marks candidate segments using two
+channels:
+- consecutive-frame difference (fast movement), and
+- background difference against a rolling reference (slow descents and
+  collapses that spread their change across steps and would slip under a
+  consecutive-only threshold).
 
-Fails loudly: a video that cannot be decoded raises, it is never skipped
-silently (denominator integrity starts here).
+Segments are padded by the spec's candidate window (-2 s / +4 s) before
+being handed downstream, because the post-event stillness window is the
+most discriminative evidence and must not be amputated at this stage.
+
+Denominator discipline: per-clip gate statistics are always returned
+(segments kept, short runs dropped, seconds flagged, zero-candidate
+flag). A fall clip that yields zero candidates is a visible gate miss,
+never a silent system negative. A video that cannot be decoded raises.
 """
 from __future__ import annotations
 
 import subprocess
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from pathlib import Path
 
 import numpy as np
 
-_W, _H = 160, 90  # gate resolution; small on purpose, this is a pre-filter
+from .config import GATE
 
 
-def motion_series(video: Path, fps: float = 5.0) -> np.ndarray:
-    """Mean absolute pixel difference per frame step, at `fps` sampling."""
+def _decode(video: Path, fps: float, width: int, height: int) -> np.ndarray:
     cmd = [
         "ffmpeg", "-v", "error", "-i", str(video),
-        "-vf", f"fps={fps},scale={_W}:{_H},format=gray",
+        "-vf", f"fps={fps},scale={width}:{height},format=gray",
         "-f", "rawvideo", "-pix_fmt", "gray", "-",
     ]
     raw = subprocess.run(cmd, check=True, capture_output=True).stdout
-    frame_bytes = _W * _H
+    frame_bytes = width * height
     n = len(raw) // frame_bytes
     if n < 2:
         raise ValueError(f"{video}: decoded {n} frames, need >= 2")
     frames = np.frombuffer(raw[: n * frame_bytes], dtype=np.uint8)
-    frames = frames.reshape(n, frame_bytes).astype(np.float32)
+    return frames.reshape(n, frame_bytes).astype(np.float32)
+
+
+def motion_series(video: Path, fps: float = GATE["sample_fps"]) -> np.ndarray:
+    """Consecutive-frame mean absolute difference per step."""
+    frames = _decode(video, fps, GATE["width"], GATE["height"])
     return np.abs(np.diff(frames, axis=0)).mean(axis=1)
+
+
+def background_series(video: Path, fps: float = GATE["sample_fps"],
+                      ref_window_s: float = 2.0) -> np.ndarray:
+    """Per-step difference of each new frame vs a rolling-median reference.
+
+    Catches slow, spread-out motion (a slide or collapse) whose per-step
+    change never crosses the consecutive threshold on its own. Aligned
+    with motion_series: entry i describes the step from frame i to i+1,
+    comparing frame i+1 against the median of the frames before it.
+    """
+    frames = _decode(video, fps, GATE["width"], GATE["height"])
+    win = max(1, int(ref_window_s * fps))
+    out = np.zeros(len(frames) - 1, dtype=np.float32)
+    for i in range(len(frames) - 1):
+        lo = max(0, i + 1 - win)
+        ref = np.median(frames[lo:i + 1], axis=0)
+        out[i] = np.abs(frames[i + 1] - ref).mean()
+    return out
 
 
 @dataclass
@@ -43,13 +75,17 @@ class Segment:
     peak: float
 
 
-def candidate_segments(
-    series: np.ndarray, fps: float, threshold: float,
-    min_len_s: float = 0.4, merge_gap_s: float = 0.6,
-) -> list[Segment]:
-    """Contiguous above-threshold runs, short gaps merged, short runs dropped."""
-    above = series > threshold
-    segs: list[Segment] = []
+@dataclass
+class GateStats:
+    segments_kept: int = 0
+    runs_dropped_short: int = 0
+    seconds_flagged: float = 0.0
+    zero_candidate: bool = True
+    peak_motion: float = 0.0
+
+
+def _runs(above: np.ndarray, fps: float, merge_gap_s: float) -> list[tuple[int, int]]:
+    runs: list[tuple[int, int]] = []
     i = 0
     while i < len(above):
         if not above[i]:
@@ -61,8 +97,57 @@ def candidate_segments(
             if above[j]:
                 last_on = j
             j += 1
-        if (last_on - i + 1) / fps >= min_len_s:
-            segs.append(Segment(i / fps, (last_on + 1) / fps,
-                                float(series[i:last_on + 1].max())))
+        runs.append((i, last_on))
         i = j
-    return segs
+    return runs
+
+
+def candidate_segments(
+    series: np.ndarray, fps: float,
+    threshold: float = GATE["diff_threshold"],
+    min_len_s: float = GATE["min_len_s"],
+    merge_gap_s: float = GATE["merge_gap_s"],
+    pad_pre_s: float = GATE["pad_pre_s"],
+    pad_post_s: float = GATE["pad_post_s"],
+    duration_s: float | None = None,
+) -> tuple[list[Segment], GateStats]:
+    """Above-threshold runs, padded by the candidate window, overlaps merged.
+
+    Returns (segments, stats). Dropped short runs are counted in stats,
+    never silently discarded.
+    """
+    stats = GateStats(peak_motion=float(series.max()) if len(series) else 0.0)
+    segs: list[Segment] = []
+    for (a, b) in _runs(series > threshold, fps, merge_gap_s):
+        if (b - a + 1) / fps < min_len_s:
+            stats.runs_dropped_short += 1
+            continue
+        start = max(0.0, a / fps - pad_pre_s)
+        end = (b + 1) / fps + pad_post_s
+        if duration_s is not None:
+            end = min(end, duration_s)
+        peak = float(series[a:b + 1].max())
+        if segs and start <= segs[-1].end_s:  # overlap after padding: merge
+            segs[-1].end_s = max(segs[-1].end_s, end)
+            segs[-1].peak = max(segs[-1].peak, peak)
+        else:
+            segs.append(Segment(start, end, peak))
+    stats.segments_kept = len(segs)
+    stats.seconds_flagged = sum(s.end_s - s.start_s for s in segs)
+    stats.zero_candidate = len(segs) == 0
+    return segs, stats
+
+
+def gate_clip(video: Path, duration_s: float) -> tuple[list[Segment], GateStats]:
+    """Full gate for one clip: a step is a candidate if EITHER channel fires.
+
+    Each channel is normalized by its own threshold, so a combined value
+    above 1.0 means at least one channel crossed its frozen threshold.
+    """
+    fps = GATE["sample_fps"]
+    consec = motion_series(video, fps) / GATE["diff_threshold"]
+    bg = background_series(video, fps) / GATE["bg_threshold"]
+    m = min(len(consec), len(bg))
+    combined = np.maximum(consec[:m], bg[:m])
+    return candidate_segments(combined, fps, threshold=1.0,
+                              duration_s=duration_s)
