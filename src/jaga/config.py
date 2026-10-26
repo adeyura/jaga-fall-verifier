@@ -27,7 +27,16 @@ GATE = {
     "pad_post_s": 4.0,
 }
 
+FEATURES = {
+    "iou_threshold": 0.2,        # keyframe association threshold (box IoU)
+    "max_missed_keyframes": 1,   # a track survives this many missed keyframes
+    "stillness_window_s": 3.0,   # trailing window for the stillness measure
+    "stillness_min_span_s": 2.0, # min observed span before stillness is known
+    "bottom_band_frac": 0.2,     # mask rows counted as the base band
+}
+
 
 def config_hash() -> str:
-    blob = json.dumps({"gate": GATE}, sort_keys=True).encode()
+    blob = json.dumps({"gate": GATE, "features": FEATURES},
+                      sort_keys=True).encode()
     return hashlib.sha256(blob).hexdigest()[:16]
