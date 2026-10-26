@@ -76,13 +76,20 @@ def _smooth(x: np.ndarray, win: int) -> np.ndarray:
 
 @dataclass
 class Interval:
-    onset_s: float
-    offset_s: float
-    duration_s: float
+    onset_s: float          # start of the envelope run
+    offset_s: float         # end of the envelope run
+    duration_s: float       # full envelope-run length
+    core_onset_s: float     # start of the core (half-prominence width)
+    core_offset_s: float    # end of the core: the descent itself,
+                            # without recovery tails merged at low level
     peak_area_frac: float
     peak_energy: float
     peak_vy_hps: float      # diagnostic only, never a gate
     net_centroid_drop: float  # diagnostic only, never a gate
+
+    @property
+    def core_duration_s(self) -> float:
+        return self.core_offset_s - self.core_onset_s
 
 
 @dataclass
@@ -110,15 +117,29 @@ def analyze(energy: np.ndarray, area_frac: np.ndarray,
     cy = centroid_y.astype(np.float64).copy()
     known = ~np.isnan(cy)
     if known.any():
+        # Fill only short unobserved gaps: interpolating the diagnostic
+        # trace across seconds of stillness would fabricate precision.
         idx = np.arange(n)
-        cy = _smooth(np.interp(idx, idx[known], cy[known]), win)
-        vy = np.gradient(cy) * fps
+        filled = np.interp(idx, idx[known], cy[known])
+        gap_ok = np.zeros(n, dtype=bool)
+        known_idx = idx[known]
+        for a, b in zip(known_idx[:-1], known_idx[1:]):
+            if (b - a) / fps <= p["centroid_fill_max_gap_s"]:
+                gap_ok[a:b + 1] = True
+        gap_ok[known] = True
+        cy = np.where(gap_ok, filled, np.nan)
+        cy = _smooth(np.where(np.isnan(cy), 0.0, cy), win)
+        cy = np.where(gap_ok, cy, np.nan)
+        vy = np.gradient(np.where(np.isnan(cy), 0.0, cy)) * fps
+        vy = np.where(np.isnan(cy), np.nan, vy)
     else:
-        vy = np.zeros(n)
+        vy = np.full(n, np.nan)
     floor = float(np.median(af))
     scale = float(np.percentile(af, 95))
     span = scale - floor
-    if span <= 0:
+    if span < p["min_span_abs"]:
+        # The envelope is effectively flat: no timing signal exists in
+        # this clip, and saying so beats inventing intervals from noise.
         return TimingResult([], None, floor, scale, fps)
     high = floor + p["burst_high_frac"] * span
     low = floor + p["burst_low_frac"] * span
@@ -132,17 +153,34 @@ def analyze(energy: np.ndarray, area_frac: np.ndarray,
         j = i
         while j + 1 < n and active[j + 1]:
             j += 1
-        if af[i:j + 1].max() > high:
+        seg_af = af[i:j + 1]
+        if seg_af.max() > high:
+            peak_k = int(np.argmax(seg_af))
+            core_level = floor + p["core_frac"] * (seg_af[peak_k] - floor)
+            lo = peak_k
+            while lo > 0 and seg_af[lo - 1] > core_level:
+                lo -= 1
+            hi = peak_k
+            while hi < len(seg_af) - 1 and seg_af[hi + 1] > core_level:
+                hi += 1
+            seg_vy = vy[i:j + 1]
+            finite_vy = seg_vy[np.isfinite(seg_vy)]
+            seg_cy = cy[i:j + 1]
+            finite_cy = seg_cy[np.isfinite(seg_cy)]
             intervals.append(Interval(
                 onset_s=i / fps, offset_s=(j + 1) / fps,
                 duration_s=(j + 1 - i) / fps,
-                peak_area_frac=float(af[i:j + 1].max()),
+                core_onset_s=(i + lo) / fps,
+                core_offset_s=(i + hi + 1) / fps,
+                peak_area_frac=float(seg_af.max()),
                 peak_energy=float(e[i:j + 1].max()),
-                peak_vy_hps=float(vy[i:j + 1].max()),
-                net_centroid_drop=float(cy[j] - cy[i])))
+                peak_vy_hps=(float(finite_vy.max()) if len(finite_vy)
+                             else 0.0),
+                net_centroid_drop=(float(finite_cy[-1] - finite_cy[0])
+                                   if len(finite_cy) >= 2 else 0.0)))
         i = j + 1
     in_bounds = [iv for iv in intervals
-                 if p["min_duration_s"] <= iv.duration_s
+                 if p["min_duration_s"] <= iv.core_duration_s
                  <= p["max_duration_s"]]
     descent = max(in_bounds, key=lambda iv: iv.peak_area_frac, default=None)
     return TimingResult(intervals, descent, floor, scale, fps)

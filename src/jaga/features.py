@@ -221,14 +221,17 @@ def stillness(track: Track, frame_w: int | None = None,
               window_s: float | None = None,
               min_span_s: float | None = None,
               max_gap_s: float | None = None,
-              after_s: float | None = None) -> float | None:
+              after_s: float | None = None,
+              anchor: str = "trailing") -> float | None:
     """Max pairwise centroid displacement (frame heights) in the window.
 
-    The window is the trailing window_s of the track, optionally
-    restricted to frames at or after after_s. The restriction matters:
-    stillness is a claim about the period after an event, and a window
-    that reaches back across the descent itself would read the fall as
-    movement and condemn every real fall on a short track.
+    Anchoring: by default the window is the trailing window_s of the
+    track. With anchor="start" and after_s set, the window is
+    [after_s, after_s + window_s]: the period immediately following an
+    event. The rules stage uses the start anchor, because its question
+    is "still for the window after the descent" — a trailing window on
+    a long track would silently exclude the first, most diagnostic
+    seconds after the event and test some later period instead.
 
     Returns None when the evidence cannot support a stillness claim:
     fewer than two observations, an observed span shorter than
@@ -263,12 +266,21 @@ def stillness(track: Track, frame_w: int | None = None,
         max_gap_s = FEATURES["stillness_max_gap_s"]
     if not track.frames:
         return None
-    end_t = track.frames[-1].t_s
-    start_t = end_t - window_s
-    if after_s is not None:
-        start_t = max(start_t, after_s)
-    pts = [(f.centroid_x * (frame_w / frame_h), f.centroid_y, f.t_s)
-           for f in track.frames if f.t_s >= start_t]
+    if anchor == "start":
+        if after_s is None:
+            raise ValueError("start-anchored stillness needs after_s")
+        lo_t, hi_t = after_s, after_s + window_s
+        pts = [(f.centroid_x * (frame_w / frame_h), f.centroid_y, f.t_s)
+               for f in track.frames if lo_t <= f.t_s <= hi_t]
+    elif anchor == "trailing":
+        end_t = track.frames[-1].t_s
+        start_t = end_t - window_s
+        if after_s is not None:
+            start_t = max(start_t, after_s)
+        pts = [(f.centroid_x * (frame_w / frame_h), f.centroid_y, f.t_s)
+               for f in track.frames if f.t_s >= start_t]
+    else:
+        raise ValueError(f"unknown stillness anchor: {anchor!r}")
     if len(pts) < 2 or pts[-1][2] - pts[0][2] < min_span_s:
         return None
     for a, b in zip(pts, pts[1:]):

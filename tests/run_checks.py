@@ -69,8 +69,10 @@ HOR = (85, 130, 225, 180)
 SEATED = (100, 60, 155, 180)
 
 
-def timing(a, b):
+def timing(a, b, core=None):
+    ca, cb = core if core is not None else (a, b)
     iv = Interval(onset_s=a, offset_s=b, duration_s=b - a,
+                  core_onset_s=ca, core_offset_s=cb,
                   peak_area_frac=0.4, peak_energy=9.0, peak_vy_hps=0.8,
                   net_centroid_drop=0.2)
     return TimingResult([iv], iv, 0.01, 0.1, 30.0)
@@ -220,10 +222,123 @@ def _():
     assert v.label == "no_evidence"
 
 
-@check("rules: keyframe fallback descent carries keyframes provenance")
+@check("rules: keyframe fallback cannot measure duration -> uncertain")
 def _():
+    # The fallback's "duration" is the sampling gap, not a measurement;
+    # a fall-consistent clip judged on it caps at uncertain (H1).
     v = run_rules(FALL_FRAMES, None)
-    assert v.label == "fall_candidate" and v.timing_source == "keyframes"
+    assert v.label == "uncertain" and v.timing_source == "keyframes"
+    assert v.phases["descent"].satisfied is None
+
+
+@check("rules: merged recovery tail does not inflate the descent (H2)")
+def _():
+    # Envelope run 0.7-3.3 s (descent + recovery scramble) with a
+    # 0.6 s core: the phase judges the core, brackets on the core.
+    v = run_rules(FALL_FRAMES, timing(0.7, 3.3, core=(0.8, 1.4)))
+    assert v.label == "fall_candidate", v.reasons
+
+
+@check("rules: occluded descent (transition, no descent seen) -> uncertain (H3)")
+def _():
+    gradual = [(0.0, [inst(UP, 85)]),
+               (0.5, [inst((100, 35, 150, 170), 80)]),
+               (1.0, [inst((98, 55, 165, 178), 65)]),
+               (1.5, [inst((92, 80, 200, 180), 40)]),
+               (2.0, [inst(HOR, 10)]), (2.5, [inst(HOR, 10)]),
+               (3.0, [inst(HOR, 10)]), (3.5, [inst(HOR, 10)])]
+    v = run_rules(gradual, None)
+    assert v.label == "uncertain", (v.label, v.reasons)
+
+
+@check("rules: no descent and no transition -> negative (H3)")
+def _():
+    still_up = [(t * 0.5, [inst(UP, 85)]) for t in range(8)]
+    v = run_rules(still_up, None)
+    assert v.label == "negative", (v.label, v.reasons)
+
+
+@check("rules: stillness is anchored at the descent, not the track end (M1)")
+def _():
+    # Still 1.5-4.0, then the (horizontal) person shifts at 4.5+:
+    # the post-descent window [1.3, 4.3] is still -> candidate.
+    shifted = (145, 130, 285, 180)
+    frames = FALL_FRAMES[:9] + [(4.5, [inst(shifted, 10)]),
+                                (5.0, [inst(shifted, 10)]),
+                                (5.5, [inst(shifted, 10)]),
+                                (6.0, [inst(shifted, 10)])]
+    v = run_rules(frames, timing(0.7, 1.3))
+    assert v.label == "fall_candidate", (v.label, v.reasons)
+
+
+@check("rules: movement inside the post-descent window fails stillness (M1)")
+def _():
+    # Horizontal throughout after the descent, but the person shifts
+    # at 2.5 s (inside [1.3, 4.3]) and is still afterwards.
+    shifted = (145, 130, 285, 180)
+    frames = [(0.0, [inst(UP, 85)]), (0.5, [inst(UP, 85)]),
+              (1.0, [inst(MID, 45)]), (1.5, [inst(HOR, 10)]),
+              (2.0, [inst(HOR, 10)]), (2.5, [inst(shifted, 10)]),
+              (3.0, [inst(shifted, 10)]), (3.5, [inst(shifted, 10)]),
+              (4.0, [inst(shifted, 10)]), (4.5, [inst(shifted, 10)]),
+              (5.0, [inst(shifted, 10)]), (5.5, [inst(shifted, 10)]),
+              (6.0, [inst(shifted, 10)])]
+    v = run_rules(frames, timing(0.7, 1.3))
+    assert v.label == "negative", (v.label, v.reasons)
+
+
+@check("rules: a later interval can carry the fall (M2)")
+def _():
+    walk = [(t * 0.5, [inst((100 + int(t * 4), 20, 150 + int(t * 4), 160), 85)])
+            for t in range(8)]                       # 0..3.5 walking
+    stand = [(4.0 + t * 0.5, [inst(UP, 85)]) for t in range(8)]  # 4..7.5
+    fall = [(8.0, [inst(MID, 45)]), (8.5, [inst(HOR, 10)]),
+            (9.0, [inst(HOR, 10)]), (9.5, [inst(HOR, 10)]),
+            (10.0, [inst(HOR, 10)]), (10.5, [inst(HOR, 10)]),
+            (11.0, [inst(HOR, 10)]), (11.5, [inst(HOR, 10)])]
+    spec = walk + stand + fall
+    iv1 = Interval(onset_s=3.0, offset_s=3.6, duration_s=0.6,
+                   core_onset_s=3.0, core_offset_s=3.6,
+                   peak_area_frac=0.4, peak_energy=9.0,
+                   peak_vy_hps=0.8, net_centroid_drop=0.0)
+    iv2 = Interval(onset_s=7.9, offset_s=8.5, duration_s=0.6,
+                   core_onset_s=7.9, core_offset_s=8.5,
+                   peak_area_frac=0.3, peak_energy=9.0,
+                   peak_vy_hps=0.8, net_centroid_drop=0.2)
+    tm = TimingResult([iv1, iv2], iv2, 0.01, 0.1, 30.0)
+    v = run_rules(spec, tm)
+    assert v.label == "fall_candidate", (v.label, v.reasons)
+
+
+@check("rules: a fragmented faller beats a longer bystander track (M3)")
+def _():
+    bystander = (400, 20, 450, 160)
+    spec = [(t, [fl[0], inst(bystander, 85, oid="1")])
+            for t, fl in FALL_FRAMES]
+    v = run_rules(spec, timing(0.7, 1.3))
+    assert v.label == "fall_candidate", (v.label, v.reasons)
+
+
+@check("timing: core duration excludes a merged low tail")
+def _():
+    e = np.concatenate([np.full(200, 0.5), np.full(18, 9.0),
+                        np.full(60, 3.0), np.full(60, 0.5)])
+    af = np.concatenate([np.full(200, 0.01), np.full(18, 0.45),
+                         np.full(60, 0.10), np.full(60, 0.01)])
+    cy = np.full(338, 0.45)
+    r = analyze(e, af, cy, 30.0)
+    assert r.descent is not None
+    assert abs(r.descent.core_duration_s - 0.6) <= 0.2, r.descent
+    assert r.descent.duration_s > 2.0, r.descent
+
+
+@check("timing: a flat envelope carries no signal and says so")
+def _():
+    e = np.full(300, 0.5)
+    af = np.array([0.0100, 0.0104] * 150)
+    cy = np.full(300, 0.45)
+    r = analyze(e, af, cy, 30.0)
+    assert r.intervals == [] and r.descent is None
 
 
 # ------------------------------------------------------- adjudicator

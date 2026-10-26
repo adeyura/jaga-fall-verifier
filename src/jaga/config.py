@@ -43,6 +43,12 @@ TIMING = {
     "area_diff_threshold": 10.0, # gray levels: a pixel counts as changed
     "burst_high_frac": 0.5,      # burst peak, fraction of floor-to-p95 span
     "burst_low_frac": 0.2,       # hysteresis floor, same span
+    "core_frac": 0.5,            # descent core: width at this fraction of
+                                 # the peak's height above the floor
+    "min_span_abs": 0.005,       # below this p95-floor span the envelope
+                                 # carries no usable signal at all
+    "centroid_fill_max_gap_s": 1.0,  # diagnostics only: longest NaN gap
+                                 # the centroid trace may be filled across
     "min_duration_s": 0.15,
     "max_duration_s": 3.0,
 }
@@ -55,6 +61,10 @@ RULES = {
     "descent_max_s": 1.0,
     "descent_vy_min_hps": 0.25,  # keyframe fallback: downward velocity
     "stillness_max_disp_h": 0.03,  # trailing stillness ceiling, frame ht
+    "overlap_slack_s": 1.0,      # timing/track pairing tolerance
+    "min_track_frames": 2,       # a track needs this many keyframes
+    "min_phase_frames": 2,       # classified keyframes a phase needs
+                                 # before it may read as satisfied
 }
 
 
