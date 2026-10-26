@@ -41,8 +41,10 @@ def _decode(video: Path, fps: float, width: int, height: int) -> np.ndarray:
     if n < 2:
         raise ValueError(f"{video}: decoded {n} frames, need >= 2")
     # Reconcile against the container duration: ffmpeg can exit 0 while
-    # skipping corrupt packets, which would silently shorten the series
-    # and bury every later event. A mismatch is an error, not a shorter clip.
+    # skipping corrupt packets, which would shorten the series and bury
+    # every later event. A GROSS mismatch raises. The tolerance (max of 2
+    # frames or 10%) is a VFR allowance, named as an accepted risk in
+    # SPEC.md — it is not a guarantee against small tail losses.
     expected = probe_duration(video) * fps
     if abs(n - expected) > max(2, 0.1 * expected):
         raise ValueError(
@@ -59,7 +61,7 @@ def motion_series(video: Path, fps: float = GATE["sample_fps"]) -> np.ndarray:
 
 
 def background_series(video: Path, fps: float = GATE["sample_fps"],
-                      ref_window_s: float = 2.0) -> np.ndarray:
+                      ref_window_s: float = GATE["bg_ref_window_s"]) -> np.ndarray:
     """Per-step difference of each new frame vs a rolling-median reference.
 
     Catches slow, spread-out motion (a slide or collapse) whose per-step
@@ -118,7 +120,8 @@ def candidate_segments(
     merge_gap_s: float = GATE["merge_gap_s"],
     pad_pre_s: float = GATE["pad_pre_s"],
     pad_post_s: float = GATE["pad_post_s"],
-    duration_s: float | None = None,
+    *,
+    duration_s: float,
 ) -> tuple[list[Segment], GateStats]:
     """Above-threshold runs, padded by the candidate window, overlaps merged.
 
@@ -135,9 +138,7 @@ def candidate_segments(
             stats.runs_dropped_short += 1
             continue
         start = max(0.0, a / fps - pad_pre_s)
-        end = (b + 1) / fps + pad_post_s
-        if duration_s is not None:
-            end = min(end, duration_s)
+        end = min((b + 1) / fps + pad_post_s, duration_s)
         peak = float(series[a:b + 1].max())
         if segs and start <= segs[-1].end_s:  # overlap after padding: merge
             segs[-1].end_s = max(segs[-1].end_s, end)
@@ -159,7 +160,10 @@ def gate_clip(video: Path, duration_s: float) -> tuple[list[Segment], GateStats]
     fps = GATE["sample_fps"]
     consec = motion_series(video, fps) / GATE["diff_threshold"]
     bg = background_series(video, fps) / GATE["bg_threshold"]
-    m = min(len(consec), len(bg))
-    combined = np.maximum(consec[:m], bg[:m])
+    if len(consec) != len(bg):
+        raise ValueError(
+            f"{video}: channel length mismatch ({len(consec)} vs {len(bg)}); "
+            "refusing to silently truncate the candidate tail")
+    combined = np.maximum(consec, bg)
     return candidate_segments(combined, fps, threshold=1.0,
                               duration_s=duration_s)

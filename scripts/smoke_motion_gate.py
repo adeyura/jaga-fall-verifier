@@ -25,7 +25,8 @@ def main() -> None:
           f"{stats.runs_dropped_short}, zero-candidate {stats.zero_candidate}")
     print(f"{TAG} | flagged {stats.seconds_flagged:.1f}s of {duration:.1f}s")
     for s in segs:
-        print(f"{TAG} |   segment {s.start_s:5.1f}s -> {s.end_s:5.1f}s peak {s.peak:.2f}")
+        print(f"{TAG} |   segment {s.start_s:5.1f}s -> {s.end_s:5.1f}s "
+              f"peak {s.peak:.2f} (x threshold, normalized)")
 
 if __name__ == "__main__":
     main()

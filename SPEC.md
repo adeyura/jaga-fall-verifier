@@ -8,6 +8,11 @@ threshold iteration happens on the dev split only.
 ## Datasets and scope
 
 - Gate scope: UR Fall + Le2i. UP-Fall joins only after the gate decision.
+- Accepted risk, stated plainly: decoded frame counts are reconciled
+  against container duration with a tolerance of max(2 frames, 10%) as a
+  variable-frame-rate allowance. A loss inside that tolerance could in
+  principle hide a tail event; the checks refuse gross shortening, they
+  do not guarantee frame-perfect decoding.
 - UR Fall as distributed (verified 2026-10-27): falls are the CEILING
   camera (cam1) only, ADL the floor-parallel camera (cam0) only — a
   class-conditional camera confound. UR Fall results are reported with

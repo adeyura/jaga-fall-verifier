@@ -15,10 +15,21 @@ from pathlib import Path
 
 
 def _check_cache_dir(out_dir: Path) -> None:
-    parts = set(out_dir.resolve().parts)
+    resolved = out_dir.resolve()
+    parts = set(resolved.parts)
     if "cache" not in parts and "tmp" not in parts:
         raise ValueError(
             f"refusing to extract frames outside a cache/ or tmp/ path: {out_dir}")
+    # sample_frames clears its target before extracting, so the target must
+    # be a dedicated per-clip leaf, never a shared cache root itself.
+    if resolved.name in ("cache", "tmp"):
+        raise ValueError(
+            f"refusing to clear a shared cache root: {out_dir}; "
+            "pass a per-clip subdirectory")
+    if resolved.exists() and any(p.is_dir() for p in resolved.iterdir()):
+        raise ValueError(
+            f"refusing to clear {out_dir}: it contains subdirectories, "
+            "so it does not look like a dedicated per-clip directory")
 
 
 def sample_frames(video: Path, out_dir: Path, fps: float) -> list[tuple[float, Path]]:
