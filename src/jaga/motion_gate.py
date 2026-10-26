@@ -26,6 +26,7 @@ from pathlib import Path
 import numpy as np
 
 from .config import GATE
+from .frames import probe_duration
 
 
 def _decode(video: Path, fps: float, width: int, height: int) -> np.ndarray:
@@ -39,6 +40,14 @@ def _decode(video: Path, fps: float, width: int, height: int) -> np.ndarray:
     n = len(raw) // frame_bytes
     if n < 2:
         raise ValueError(f"{video}: decoded {n} frames, need >= 2")
+    # Reconcile against the container duration: ffmpeg can exit 0 while
+    # skipping corrupt packets, which would silently shorten the series
+    # and bury every later event. A mismatch is an error, not a shorter clip.
+    expected = probe_duration(video) * fps
+    if abs(n - expected) > max(2, 0.1 * expected):
+        raise ValueError(
+            f"{video}: decoded {n} frames at {fps} fps, expected ~{expected:.0f}; "
+            "refusing a silently shortened motion series")
     frames = np.frombuffer(raw[: n * frame_bytes], dtype=np.uint8)
     return frames.reshape(n, frame_bytes).astype(np.float32)
 
@@ -114,7 +123,10 @@ def candidate_segments(
     """Above-threshold runs, padded by the candidate window, overlaps merged.
 
     Returns (segments, stats). Dropped short runs are counted in stats,
-    never silently discarded.
+    never silently discarded. Note: the minimum-length test measures the
+    full run span including merged quiet gaps, so two short bursts joined
+    by a merge pass jointly — a deliberate choice, since the gate's job is
+    generous candidate selection, not precise event boundaries.
     """
     stats = GateStats(peak_motion=float(series.max()) if len(series) else 0.0)
     segs: list[Segment] = []

@@ -1,0 +1,257 @@
+{
+  "source_index": "http://fenix.ur.edu.pl/~mkepski/ds/uf.html",
+  "files": [
+    {
+      "filename": "fall-01-acc.csv",
+      "url": "http://fenix.ur.edu.pl/~mkepski/ds/data/fall-01-acc.csv",
+      "bytes": 9529,
+      "sha256": "66e99e79041028a6dcac04e865609ec80518d9e24e3c75f01b96ba79eda1a59b"
+    },
+    {
+      "filename": "fall-01-cam1.mp4",
+      "url": "http://fenix.ur.edu.pl/~mkepski/ds/data/fall-01-cam1.mp4",
+      "bytes": 1321026,
+      "sha256": "eb7184265b66c95f2998eb526ece3c83667bfc747bcef805af8e0621c7913849"
+    },
+    {
+      "filename": "fall-02-acc.csv",
+      "url": "http://fenix.ur.edu.pl/~mkepski/ds/data/fall-02-acc.csv",
+      "bytes": 6379,
+      "sha256": "600013041c626b8db92678efe69598dcad0ec1d56f2bb56628dc9a2620b23ff0"
+    },
+    {
+      "filename": "fall-02-cam1.mp4",
+      "url": "http://fenix.ur.edu.pl/~mkepski/ds/data/fall-02-cam1.mp4",
+      "bytes": 863475,
+      "sha256": "aaba2c0b7e540c404f0d2da545df342be52de08966d9a7bd136417270b5ef8aa"
+    },
+    {
+      "filename": "fall-03-acc.csv",
+      "url": "http://fenix.ur.edu.pl/~mkepski/ds/data/fall-03-acc.csv",
+      "bytes": 15591,
+      "sha256": "fc093b5fd0a335840c48ed322906f06b3438fcb9c0168ffa1497243e7a4a37de"
+    },
+    {
+      "filename": "fall-03-cam1.mp4",
+      "url": "http://fenix.ur.edu.pl/~mkepski/ds/data/fall-03-cam1.mp4",
+      "bytes": 1814987,
+      "sha256": "c033783409b0ca60ac686352e45b4d7fa1467a2402662b19a0e13c55c20e6a65"
+    },
+    {
+      "filename": "fall-04-acc.csv",
+      "url": "http://fenix.ur.edu.pl/~mkepski/ds/data/fall-04-acc.csv",
+      "bytes": 5766,
+      "sha256": "9824f933c1df27d5ffc22948a2ca0ff11a5dbd2e8edb3921f8671fadba2dfa9f"
+    },
+    {
+      "filename": "fall-04-cam1.mp4",
+      "url": "http://fenix.ur.edu.pl/~mkepski/ds/data/fall-04-cam1.mp4",
+      "bytes": 755603,
+      "sha256": "ed29339120f253ec2031345187d1d8eded3d6a959242e3d0d6cc1b53b90cc905"
+    },
+    {
+      "filename": "fall-05-acc.csv",
+      "url": "http://fenix.ur.edu.pl/~mkepski/ds/data/fall-05-acc.csv",
+      "bytes": 9385,
+      "sha256": "9b4b4ab87c7f6d25cffa5d854220168c86fbb5be8a973e26923a41a37b73a33a"
+    },
+    {
+      "filename": "fall-05-cam1.mp4",
+      "url": "http://fenix.ur.edu.pl/~mkepski/ds/data/fall-05-cam1.mp4",
+      "bytes": 1244447,
+      "sha256": "0b02b8390845ee454f01b10b6829b4e1b338bfb306266a62fea484468c12992a"
+    },
+    {
+      "filename": "fall-06-acc.csv",
+      "url": "http://fenix.ur.edu.pl/~mkepski/ds/data/fall-06-acc.csv",
+      "bytes": 6338,
+      "sha256": "912dea1883c5a8c24ff8f8b3e055b47b999a9344a439db6c893d0dccb6c6d4ca"
+    },
+    {
+      "filename": "fall-06-cam1.mp4",
+      "url": "http://fenix.ur.edu.pl/~mkepski/ds/data/fall-06-cam1.mp4",
+      "bytes": 786342,
+      "sha256": "6a6e0b741061672b20a1fe0c2a430204bca3c86b4c57a161e24df6e2c4c4f566"
+    },
+    {
+      "filename": "fall-07-acc.csv",
+      "url": "http://fenix.ur.edu.pl/~mkepski/ds/data/fall-07-acc.csv",
+      "bytes": 14635,
+      "sha256": "fae8d0123d9f36a465e4331e42dcf5db58d7054d657465790f14afa1003817bc"
+    },
+    {
+      "filename": "fall-07-cam1.mp4",
+      "url": "http://fenix.ur.edu.pl/~mkepski/ds/data/fall-07-cam1.mp4",
+      "bytes": 1284067,
+      "sha256": "3ddee1ca302e4055db19bb000a137b61dd7d8347954c85664f78a9f9e392a12f"
+    },
+    {
+      "filename": "fall-08-acc.csv",
+      "url": "http://fenix.ur.edu.pl/~mkepski/ds/data/fall-08-acc.csv",
+      "bytes": 5720,
+      "sha256": "507d5e3e73f176cac285434fa133bf0b9b2d1ef0fb0ac791330f4f6768c081f6"
+    },
+    {
+      "filename": "fall-08-cam1.mp4",
+      "url": "http://fenix.ur.edu.pl/~mkepski/ds/data/fall-08-cam1.mp4",
+      "bytes": 708027,
+      "sha256": "8818854b4ff5c1b32765fb853e4721e3c04b0135587aac3158229da2a3396e03"
+    },
+    {
+      "filename": "fall-09-acc.csv",
+      "url": "http://fenix.ur.edu.pl/~mkepski/ds/data/fall-09-acc.csv",
+      "bytes": 12834,
+      "sha256": "eb1d6b1cb6b490dac5d3d907fe2870b040dc697423d4f41bb66fda51fd4df82c"
+    },
+    {
+      "filename": "fall-09-cam1.mp4",
+      "url": "http://fenix.ur.edu.pl/~mkepski/ds/data/fall-09-cam1.mp4",
+      "bytes": 1518722,
+      "sha256": "038bd58e1df40f11e2b0c95bacc428fb5ea394cf4c09a08e3c8c1678803445e9"
+    },
+    {
+      "filename": "fall-10-acc.csv",
+      "url": "http://fenix.ur.edu.pl/~mkepski/ds/data/fall-10-acc.csv",
+      "bytes": 5761,
+      "sha256": "19b07d65d5b9c139427deed02eba03b96aa0c193039930bc425787e429c0a093"
+    },
+    {
+      "filename": "fall-10-cam1.mp4",
+      "url": "http://fenix.ur.edu.pl/~mkepski/ds/data/fall-10-cam1.mp4",
+      "bytes": 1062990,
+      "sha256": "0400d531a1a6490641ca4e95fa145ce16b880bd2ff447c4487d395979a9b25ba"
+    },
+    {
+      "filename": "fall-11-acc.csv",
+      "url": "http://fenix.ur.edu.pl/~mkepski/ds/data/fall-11-acc.csv",
+      "bytes": 7898,
+      "sha256": "11655f1753dd8e3a8ef6f01e94409585241c33ea24d581ea02c0438810f90fc5"
+    },
+    {
+      "filename": "fall-11-cam1.mp4",
+      "url": "http://fenix.ur.edu.pl/~mkepski/ds/data/fall-11-cam1.mp4",
+      "bytes": 1045260,
+      "sha256": "d5d597e05f82bd74fc64861411a6a3d1e3f43a08b192ebfd7c794143746d5e14"
+    },
+    {
+      "filename": "fall-12-acc.csv",
+      "url": "http://fenix.ur.edu.pl/~mkepski/ds/data/fall-12-acc.csv",
+      "bytes": 6918,
+      "sha256": "dbdf1de06b846c758ef1929097b4a45121b2ee94cb9db8b771f6b090ebd49585"
+    },
+    {
+      "filename": "fall-12-cam1.mp4",
+      "url": "http://fenix.ur.edu.pl/~mkepski/ds/data/fall-12-cam1.mp4",
+      "bytes": 878729,
+      "sha256": "b1794300f2ed0d3cee94a5a9d9e97973aa739ac49d448f62f465560d90d6e56d"
+    },
+    {
+      "filename": "fall-13-acc.csv",
+      "url": "http://fenix.ur.edu.pl/~mkepski/ds/data/fall-13-acc.csv",
+      "bytes": 12726,
+      "sha256": "884ecd55cacc4106cb4d58f2f7f63e97e8964675d9ff026fd9a67340409bcaec"
+    },
+    {
+      "filename": "fall-13-cam1.mp4",
+      "url": "http://fenix.ur.edu.pl/~mkepski/ds/data/fall-13-cam1.mp4",
+      "bytes": 670371,
+      "sha256": "f905a093edc808dae9c5337a22f55805eea785caa1bfe5ebb48c879a91dc8aea"
+    },
+    {
+      "filename": "fall-14-acc.csv",
+      "url": "http://fenix.ur.edu.pl/~mkepski/ds/data/fall-14-acc.csv",
+      "bytes": 6936,
+      "sha256": "cc7ba5c8b41f75b501372342e790b44980a1cf3e703eaec59443eaabf92c37c8"
+    },
+    {
+      "filename": "fall-14-cam1.mp4",
+      "url": "http://fenix.ur.edu.pl/~mkepski/ds/data/fall-14-cam1.mp4",
+      "bytes": 448595,
+      "sha256": "757de23c4de0289753bd016382626280464ee3eaed0553a9a378f040e177d1c7"
+    },
+    {
+      "filename": "fall-15-acc.csv",
+      "url": "http://fenix.ur.edu.pl/~mkepski/ds/data/fall-15-acc.csv",
+      "bytes": 10045,
+      "sha256": "9fddad4bea40ee6168a2f89b4a7e0737d02da53efbed1ddda00c2c86e2c5f23f"
+    },
+    {
+      "filename": "fall-15-cam1.mp4",
+      "url": "http://fenix.ur.edu.pl/~mkepski/ds/data/fall-15-cam1.mp4",
+      "bytes": 551597,
+      "sha256": "c591f061c9af0db41c693be3008f7c1edfd44ff171c6dbd5c5b52a91977792a6"
+    },
+    {
+      "filename": "fall-16-acc.csv",
+      "url": "http://fenix.ur.edu.pl/~mkepski/ds/data/fall-16-acc.csv",
+      "bytes": 7739,
+      "sha256": "8bf0069f37a1698db6d687571945531b538705609f770e90d14e34983e133436"
+    },
+    {
+      "filename": "fall-16-cam1.mp4",
+      "url": "http://fenix.ur.edu.pl/~mkepski/ds/data/fall-16-cam1.mp4",
+      "bytes": 400480,
+      "sha256": "f63f939258ceb3cdd54e0135600141de980d09729994dd3023307159b2e00d84"
+    },
+    {
+      "filename": "fall-17-acc.csv",
+      "url": "http://fenix.ur.edu.pl/~mkepski/ds/data/fall-17-acc.csv",
+      "bytes": 10901,
+      "sha256": "fa703c0b2d30f3151bdf74406b9ead4207f14730b16107a0963af240dde87e73"
+    },
+    {
+      "filename": "fall-17-cam1.mp4",
+      "url": "http://fenix.ur.edu.pl/~mkepski/ds/data/fall-17-cam1.mp4",
+      "bytes": 746113,
+      "sha256": "a399b988dfb1f1b786224b46befe739fd36dff80b8f460bb13e8ede51690007a"
+    },
+    {
+      "filename": "fall-18-acc.csv",
+      "url": "http://fenix.ur.edu.pl/~mkepski/ds/data/fall-18-acc.csv",
+      "bytes": 7128,
+      "sha256": "bfd07662ebcc98e8603bee212848655d5c912035aa1300d472fc03765d70c069"
+    },
+    {
+      "filename": "fall-18-cam1.mp4",
+      "url": "http://fenix.ur.edu.pl/~mkepski/ds/data/fall-18-cam1.mp4",
+      "bytes": 483616,
+      "sha256": "c2fdc32da5bb7fcb433b07af47b995ff2c3632980f50a6101458d7520d558982"
+    },
+    {
+      "filename": "fall-19-acc.csv",
+      "url": "http://fenix.ur.edu.pl/~mkepski/ds/data/fall-19-acc.csv",
+      "bytes": 10954,
+      "sha256": "ddbee0b450f42c4396fb42fc3586aaaf2715c070e55178d53bc5221e1533d9bb"
+    },
+    {
+      "filename": "fall-19-cam1.mp4",
+      "url": "http://fenix.ur.edu.pl/~mkepski/ds/data/fall-19-cam1.mp4",
+      "bytes": 802131,
+      "sha256": "cfdfd7f6f03c9b00b9566cb6918bc177a43a3a4fd5472779a6a4e8510d1336ba"
+    },
+    {
+      "filename": "fall-20-acc.csv",
+      "url": "http://fenix.ur.edu.pl/~mkepski/ds/data/fall-20-acc.csv",
+      "bytes": 12993,
+      "sha256": "e6f315e370831dff9208c8c1ab6a5279cf9a1a10b668a2ce44caa717f1dc2e4a"
+    },
+    {
+      "filename": "fall-20-cam1.mp4",
+      "url": "http://fenix.ur.edu.pl/~mkepski/ds/data/fall-20-cam1.mp4",
+      "bytes": 862804,
+      "sha256": "b8079f3388dc457513ad94ec48a908b375c0d5859f2404e23744847c61178cb1"
+    },
+    {
+      "filename": "fall-21-acc.csv",
+      "url": "http://fenix.ur.edu.pl/~mkepski/ds/data/fall-21-acc.csv",
+      "bytes": 7967,
+      "sha256": "7b4ffef94855fa5e231a89a25a4d5519f0e5380f25e9d9ce59914d4f17115505"
+    },
+    {
+      "filename": "fall-21-cam1.mp4",
+      "url": "http://fenix.ur.edu.pl/~mkepski/ds/data/fall-21-cam1.mp4",
+      "bytes": 407083,
+      "sha256": "e39d4e7dce3277fe9905980dbc6a76e4a9153268a8b8e4475db4cf12d0668212"
+    }
+  ]
+}

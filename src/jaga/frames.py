@@ -38,7 +38,8 @@ def sample_frames(video: Path, out_dir: Path, fps: float) -> list[tuple[float, P
          "-vf", f"fps={fps}", str(pattern)],
         check=True,
     )
-    frames = sorted(out_dir.glob("f_*.png"))
+    frames = sorted(out_dir.glob("f_*.png"),
+                    key=lambda p: int(p.stem.split("_")[1]))
     if not frames:
         raise ValueError(f"{video}: extraction produced zero frames")
     expected = probe_duration(video) * fps
