@@ -69,7 +69,10 @@ RULES = {
     "min_elongation": 1.2,       # below this the axis is ill-defined
     "descent_min_s": 0.4,        # SPEC: rapid descent window
     "descent_max_s": 1.0,
-    "descent_vy_min_hps": 0.25,  # keyframe fallback: downward velocity
+    "descent_vy_min_hps": 0.25,
+    "fallback_min_match_iou": 0.2,  # fallback trusts a keyframe step
+                                    # only at/above this association
+                                    # IoU (None = track's first frame)  # keyframe fallback: downward velocity
     "stillness_max_disp_h": 0.03,  # trailing stillness ceiling, frame ht
     "overlap_slack_s": 1.0,      # timing/track pairing tolerance
     "min_track_frames": 2,       # a track needs this many keyframes

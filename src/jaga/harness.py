@@ -102,6 +102,11 @@ def run_clip(video: Path, row: dict, runner: SamRunner, cache_root: Path,
                  "view": row.get("view", "side"),
                  "config_hash": config_hash(),
                  "evidence_form": evidence_form, "segments": []}
+    try:
+        rec["run_params"] = rules_mod.params_snapshot(rec["view"])
+    except ValueError:
+        rec["run_params"] = None  # bogus view: segments will record
+                                  # the failure; the record stays honest
     if "view" not in row:
         # A missing view column must never silently evaluate a
         # ceiling clip under the side model (the original shakedown
@@ -161,9 +166,21 @@ def run_clip(video: Path, row: dict, runner: SamRunner, cache_root: Path,
             rec["outcome"] = "pipeline_error"
             rec["wall_s"] = round(time.monotonic() - t0, 2)
             return rec
-        verdict = rules_mod.evaluate(run.tracks, run.frame_w,
-                                     run.frame_h, timing=timing,
-                                     view=rec["view"])
+        try:
+            verdict = rules_mod.evaluate(run.tracks, run.frame_w,
+                                         run.frame_h, timing=timing,
+                                         view=rec["view"])
+        except Exception as e:
+            # Any failure while scoring this segment (rules, and by
+            # extension the stages below on later segments) is this
+            # clip's pipeline failure, recorded — never a batch crash
+            # that silently unscored the remaining clips.
+            seg_rec["pipeline_error"] = f"{type(e).__name__}: {e}"
+            seg_rec["run"] = run.to_dict()
+            rec["segments"].append(seg_rec)
+            rec["outcome"] = "pipeline_error"
+            rec["wall_s"] = round(time.monotonic() - t0, 2)
+            return rec
         seg_rec["run"] = run.to_dict()
         seg_rec["rules_label"] = verdict.label
         seg_rec["rules_reasons"] = verdict.reasons
@@ -175,21 +192,35 @@ def run_clip(video: Path, row: dict, runner: SamRunner, cache_root: Path,
         labels.append(verdict.label)
         if (transport is not None
                 and verdict.label in adjudicate_labels):
-            images, img_labels = ([], [])
-            if image_picker:
-                images, img_labels = image_picker(window, run)
-            adj: Verdict = adjudicate(
-                transport,
-                traces_text(clip_id, run, timing, verdict,
-                            view=rec["view"]),
-                images, image_labels=img_labels)
-            seg_rec["adjudication"] = {
-                "evidence_form": evidence_form,
-                "images": len(images),
-                "usable": adj.usable, "verdict": adj.verdict,
-                "confidence": adj.confidence, "error": adj.error,
-                "discriminator": adj.discriminator,
-                "usage": adj.usage}
+            try:
+                images, img_labels = ([], [])
+                if image_picker:
+                    images, img_labels = image_picker(window, run)
+                adj: Verdict = adjudicate(
+                    transport,
+                    traces_text(clip_id, run, timing, verdict,
+                                view=rec["view"]),
+                    images, image_labels=img_labels)
+                seg_rec["adjudication"] = {
+                    "evidence_form": evidence_form,
+                    "images": len(images),
+                    "usable": adj.usable, "verdict": adj.verdict,
+                    "confidence": adj.confidence, "error": adj.error,
+                    "discriminator": adj.discriminator,
+                    "usage": adj.usage}
+            except Exception as e:
+                # The evidence/adjudication stage failed (picker,
+                # body build, transport plumbing): the rules verdict
+                # stands, the adjudication is recorded UNUSABLE —
+                # which escalates downstream, never clears — and the
+                # batch survives.
+                seg_rec["adjudication"] = {
+                    "evidence_form": evidence_form, "images": 0,
+                    "usable": False, "verdict": None,
+                    "confidence": None,
+                    "error": f"evidence stage failed: "
+                             f"{type(e).__name__}: {e}",
+                    "discriminator": None, "usage": None}
         rec["segments"].append(seg_rec)
     rec["outcome"] = _merge_labels(labels)
     rec["wall_s"] = round(time.monotonic() - t0, 2)
@@ -208,6 +239,11 @@ def cascade(records: list[dict]) -> dict:
     for r in records:
         for s in r["segments"]:
             run = s.get("run") or {}
+            if "pipeline_error" in s and not run:
+                # A segment that failed before producing a run may
+                # still have spent SAM calls; its cost is unknown,
+                # so the total must not claim completeness.
+                cost_known = False
             if run.get("est_cost_usd") is None:
                 if run:
                     cost_known = False

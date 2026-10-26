@@ -21,3 +21,10 @@ __pycache__/
 
 # OS noise
 .DS_Store
+
+# check byproducts (regenerated deterministically)
+tests/fixtures/overlay_roundtrip.png
+tests/fixtures/attr_frame.png
+tests/fixtures/picker_frame_*.png
+tests/fixtures/picker_out_*.png
+!tests/fixtures/tiny.mp4

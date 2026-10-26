@@ -144,6 +144,22 @@ def build_tracks(keyframes: list[tuple[float, list[Instance]]],
                 raise ValueError(
                     f"bottom_band_share {inst.bottom_band_share} "
                     f"outside [0, 1] for instance {inst.object_id}")
+            if inst.mask_width != bw or inst.mask_height != bh:
+                raise ValueError(
+                    f"mask dims {inst.mask_width}x{inst.mask_height} "
+                    f"do not match the box {bw}x{bh} for instance "
+                    f"{inst.object_id}")
+            if (inst.elongation is not None
+                    and not 1.0 <= inst.elongation <= 50.0):
+                raise ValueError(
+                    f"elongation {inst.elongation} outside [1, 50] "
+                    f"for instance {inst.object_id}; a major/minor "
+                    "axis ratio cannot be below 1")
+            if (inst.axis_tilt_deg is not None
+                    and not 0.0 <= inst.axis_tilt_deg <= 90.0):
+                raise ValueError(
+                    f"axis tilt {inst.axis_tilt_deg} outside "
+                    f"[0, 90] for instance {inst.object_id}")
     tracks: list[Track] = []
     next_id = 0
     prev_t: float | None = None

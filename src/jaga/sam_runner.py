@@ -177,6 +177,8 @@ class ClipRun:
             "clip_id": self.clip_id,
             "config_hash": config_hash(),
             "model": self.model,
+            "model_attribution": ("transport-declared"
+                                  if self.model else "undeclared"),
             "prompt": self.prompt,
             "fail_on_anomaly": self.fail_on_anomaly,
             "anomalies": self.anomalies,
@@ -269,7 +271,7 @@ class SamRunner:
                     f"dimensions than the first keyframe; refusing to "
                     "score mixed geometry against one frame size")
         run = ClipRun(clip_id=clip_id, frame_w=frame_w, frame_h=frame_h,
-                      model=self.model, prompt=self.prompt,
+                      model=served, prompt=self.prompt,
                       fail_on_anomaly=self.fail_on_anomaly)
         track_input: list[tuple[float, list[Instance]]] = []
         for t_s, path in frames:

@@ -469,9 +469,8 @@ def _():
     from jaga.sam_runner import ClipRun
 
     root = ROOT
-    rows = list(_csv.DictReader(
-        (root / "results" / "manifest_draft.csv").open()))
-    row = next(r for r in rows if r["clip_id"] == "urfall_adl-01_cam0")
+    row = {"clip_id": "tiny-fixture", "label": "adl", "view": "side",
+           "video_path": "tests/fixtures/tiny.mp4"}
     tracks, _ = build_tracks(FALL_FRAMES, W, H)
 
     class StubRunner:
@@ -639,7 +638,10 @@ def _():
             frame.parent.mkdir(parents=True, exist_ok=True)
             frame.write_bytes(png)
         with tempfile.TemporaryDirectory() as td:
-            runner = sr.SamRunner(Path(td), lambda b, p: "unused")
+            def transport(b, p):
+                return "unused"
+            transport.model_id = "sam-3.1"
+            runner = sr.SamRunner(Path(td), transport)
             try:
                 runner.run_keyframes("clip", [(0.0, frame)])
             except sr.AnomalyError as e:
@@ -651,8 +653,30 @@ def _():
         sr.parse_sam_stream = real_parse
 
 
+@check("runner: an undeclared transport stamps no model on the run")
+def _():
+    import jaga.sam_runner as sr
+    import numpy as _np
+    from jaga.overlays import encode_png as _enc
+    frame = ROOT / "tests" / "fixtures" / "attr_frame.png"
+    frame.write_bytes(_enc(_np.full((240, 320, 3), 90, dtype=_np.uint8)))
+    with tempfile.TemporaryDirectory() as td:
+        runner = sr.SamRunner(Path(td), lambda b, p: SYNTH_STREAM)
+        run = runner.run_keyframes("clip", [(0.0, frame)])
+        assert run.model is None
+        assert run.to_dict()["model_attribution"] == "undeclared"
+        def declared(b, p):
+            return SYNTH_STREAM
+        declared.model_id = "sam-3.1"
+        runner2 = sr.SamRunner(Path(td), declared)
+        run2 = runner2.run_keyframes("clip", [(0.0, frame)])
+        assert run2.model == "sam-3.1"
+        assert run2.to_dict()["model_attribution"] == \
+            "transport-declared"
+
+
 def main() -> int:
-    strict = os.environ.get("JAGA_STRICT") == "1"
+    strict = os.environ.get("JAGA_STRICT") != "0"
     failed = 0
     for name, status, note in RESULTS:
         print(f"{status:4}  {name}" + (f"  — {note}" if note else ""))
@@ -851,7 +875,9 @@ def _():
 
 @check("parse: [DONE] is a sufficient but not necessary terminator")
 def _():
-    insts, _ = parse_sam_stream(SYNTH_STREAM.replace("data: [DONE]", ""))
+    stripped = SYNTH_STREAM.replace("data: [DONE]", "")
+    assert stripped != SYNTH_STREAM  # the edit must actually happen
+    insts, _ = parse_sam_stream(stripped)
     assert len(insts) == 1
 
 
@@ -974,14 +1000,74 @@ def _():
     assert v2.params["params_overridden"] is True
 
 
+@check("rules: the fallback distrusts weakly associated fast steps")
+def _():
+    from jaga.features import KeyframeFeatures, Track
+    from jaga.rules import evaluate
+
+    def frame(t, cy, elong, tilt, vy=None, iou=None, gap=False):
+        return KeyframeFeatures(
+            t_s=t, object_id="0", box=(100, 50, 160, 200),
+            area_px=5000, aspect=1.0, elongation=elong,
+            axis_tilt_deg=tilt, centroid_x=0.4, centroid_y=cy,
+            floor_proximity=cy + 0.2, bottom_band_share=0.1,
+            speed_hps=vy, vy_hps=vy, dt_s=0.5, spans_gap=gap,
+            match_iou=iou)
+
+    def track(step_iou):
+        frames = [frame(0.0, 0.30, 1.6, 85.0),
+                  frame(0.5, 0.30, 1.6, 85.0, iou=0.95),
+                  frame(1.0, 0.45, 1.8, 45.0, vy=0.1, iou=0.9),
+                  frame(1.5, 0.75, 2.5, 10.0, vy=0.6, iou=step_iou)]
+        frames += [frame(t, 0.75, 2.5, 10.0, vy=0.0, iou=0.95)
+                   for t in (2.0, 2.5, 3.0, 3.5, 4.0, 4.5, 5.0)]
+        return Track(track_id=1, frames=frames)
+
+    v = evaluate([track(0.9)], W, H)
+    d = v.phases["descent"]
+    assert d.detail.get("source") == "keyframes", (v.label, v.phases)
+    assert d.detail.get("vy_hps") == 0.6
+    assert d.detail.get("match_iou") == 0.9
+    assert v.label == "uncertain"  # duration unmeasured by design
+
+    v2 = evaluate([track(0.1)], W, H)
+    d2 = v2.phases["descent"]
+    assert d2.detail.get("source") != "keyframes", (v2.label, v2.phases)
+
+
+@check("rules: a fast step spanning a gap never authors a fallback")
+def _():
+    from jaga.features import KeyframeFeatures, Track
+    from jaga.rules import evaluate
+
+    def frame(t, cy, elong, tilt, vy=None, gap=False):
+        return KeyframeFeatures(
+            t_s=t, object_id="0", box=(100, 50, 160, 200),
+            area_px=5000, aspect=1.0, elongation=elong,
+            axis_tilt_deg=tilt, centroid_x=0.4, centroid_y=cy,
+            floor_proximity=cy + 0.2, bottom_band_share=0.1,
+            speed_hps=vy, vy_hps=vy, dt_s=0.5 if not gap else 1.0,
+            spans_gap=gap, match_iou=0.95)
+    frames = [frame(0.0, 0.30, 1.6, 85.0),
+              frame(0.5, 0.30, 1.6, 85.0),
+              frame(1.5, 0.75, 2.5, 10.0, vy=0.9, gap=True),
+              frame(2.0, 0.75, 2.5, 10.0, vy=0.0),
+              frame(2.5, 0.75, 2.5, 10.0, vy=0.0),
+              frame(3.0, 0.75, 2.5, 10.0, vy=0.0),
+              frame(4.0, 0.75, 2.5, 10.0, vy=0.0),
+              frame(5.0, 0.75, 2.5, 10.0, vy=0.0)]
+    v = evaluate([Track(track_id=1, frames=frames)], W, H)
+    d = v.phases["descent"]
+    assert d.detail.get("source") != "keyframes", (v.label, v.phases)
+
+
 @check("harness: a segment parse failure is pipeline_error, not a crash")
 def _():
     import csv as _csv
     from jaga.harness import run_clip
 
-    rows = list(_csv.DictReader(
-        (ROOT / "results" / "manifest_draft.csv").open()))
-    row = next(r for r in rows if r["clip_id"] == "urfall_adl-01_cam0")
+    row = {"clip_id": "tiny-fixture", "label": "adl", "view": "side",
+           "video_path": "tests/fixtures/tiny.mp4"}
 
     class BoomRunner:
         def run_keyframes(self, clip_id, window):

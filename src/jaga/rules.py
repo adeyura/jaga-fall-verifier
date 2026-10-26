@@ -116,6 +116,10 @@ class _Window:
     gap_points: int = 0         # fallback only: fast points skipped
                                 # because they spanned a missed keyframe
     run_onset_s: float | None = None  # local only: full envelope run
+    vy_hps: float | None = None       # fallback only: authoring step
+    match_iou: float | None = None    # fallback only: its association
+    low_iou_points: int = 0           # fallback only: fast points
+                                      # skipped for weak association
 
 
 _ORDER = {"fall_candidate": 0, "uncertain": 1, "negative": 2}
@@ -141,22 +145,33 @@ def _windows_for_track(track: Track, timing: TimingResult | None,
         return windows
     best = None
     gap_points = 0
+    low_iou_points = 0
     for a, b in zip(frames, frames[1:]):
         if b.spans_gap:
             gap_points += 1
             continue
         if b.vy_hps is None or b.vy_hps < p["descent_vy_min_hps"]:
             continue
+        if (b.match_iou is not None
+                and b.match_iou < p["fallback_min_match_iou"]):
+            # A fast step on a weakly associated frame is the
+            # identity-switch shape: the centroid "fell" because the
+            # tracker swapped which mask it was following.
+            low_iou_points += 1
+            continue
         if best is None or b.vy_hps > best[2]:
-            best = (a.t_s, b.t_s, b.vy_hps)
+            best = (a.t_s, b.t_s, b.vy_hps, b.match_iou)
     if best is not None:
         return [_Window(best[0], best[1], None, "keyframes",
-                        gap_points=gap_points)]
+                        gap_points=gap_points, vy_hps=best[2],
+                        match_iou=best[3],
+                        low_iou_points=low_iou_points)]
     return []
 
 
 def _evaluate_window(track: Track, w: _Window, frame_w: int,
-                     frame_h: int, p: dict) -> RulesVerdict:
+                     frame_h: int, p: dict,
+                     still: dict | None = None) -> RulesVerdict:
     frames = track.frames
     phases: dict[str, PhaseEvidence] = {}
     detail = {"onset_s": round(w.onset, 2), "offset_s": round(w.offset, 2),
@@ -166,7 +181,10 @@ def _evaluate_window(track: Track, w: _Window, frame_w: int,
     if w.run_onset_s is not None:
         detail["run_onset_s"] = round(w.run_onset_s, 2)
     if w.source == "keyframes":
-        detail["gap_points_skipped"] = w.gap_points
+        detail["vy_hps"] = w.vy_hps
+        detail["match_iou"] = w.match_iou
+        detail["gap_points_on_track"] = w.gap_points
+        detail["low_iou_points_skipped"] = w.low_iou_points
     if w.duration is None:
         phases["descent"] = PhaseEvidence(None, detail)
     else:
@@ -212,15 +230,19 @@ def _evaluate_window(track: Track, w: _Window, frame_w: int,
         phases["pre_posture"] = _phase_from_postures(pre, p, "upright")
         phases["post_posture"] = _phase_from_postures(post, p, "horizontal")
 
-    still = stillness(track, frame_w, frame_h, after_s=w.offset,
-                      anchor="start")
-    if still is None:
+    sk = still or {}
+    disp = stillness(track, frame_w, frame_h, after_s=w.offset,
+                     anchor="start",
+                     window_s=sk.get("stillness_window_s"),
+                     min_span_s=sk.get("stillness_min_span_s"),
+                     max_gap_s=sk.get("stillness_max_gap_s"))
+    if disp is None:
         phases["stillness"] = PhaseEvidence(
             None, {"note": "insufficient observed span after descent"})
     else:
         phases["stillness"] = PhaseEvidence(
-            still <= p["stillness_max_disp_h"],
-            {"displacement_h": round(still, 4)})
+            disp <= p["stillness_max_disp_h"],
+            {"displacement_h": round(disp, 4)})
 
     # Composition. A measured descent outside the window is evidence,
     # not a veto (P3 safeguard): it produces a confident
@@ -352,11 +374,12 @@ def _progress(v: RulesVerdict) -> int:
 
 
 def _evaluate_track(track: Track, timing: TimingResult | None,
-                    frame_w: int, frame_h: int, p: dict) -> RulesVerdict:
+                    frame_w: int, frame_h: int, p: dict,
+                    still: dict | None = None) -> RulesVerdict:
     windows = _windows_for_track(track, timing, p)
     if not windows:
         return _evaluate_track_no_descent(track, p)
-    verdicts = [_evaluate_window(track, w, frame_w, frame_h, p)
+    verdicts = [_evaluate_window(track, w, frame_w, frame_h, p, still)
                 for w in windows]
 
     def _window_rank(v: RulesVerdict):
@@ -396,12 +419,17 @@ def _evaluate(tracks: list[Track], frame_w: int, frame_h: int,
     if params:
         p.update(params)
     from .config import FEATURES as _F
+    # The stillness parameters in force — including any params
+    # override — computed ONCE here and passed to the stillness call
+    # itself, so the snapshot below is the values the call consumed,
+    # not a second reading of the same dicts.
+    eff_still = {k: (params or {}).get(k, _F[k]) for k in (
+        "stillness_window_s", "stillness_min_span_s",
+        "stillness_max_gap_s")}
     snapshot = {
         "view": view,
         "rules": dict(p),
-        "stillness": {k: _F[k] for k in (
-            "stillness_window_s", "stillness_min_span_s",
-            "stillness_max_gap_s")},
+        "stillness": dict(eff_still),
         "params_overridden": bool(params),
     }
     usable = [t for t in tracks if len(t.frames) >= p["min_track_frames"]]
@@ -410,7 +438,8 @@ def _evaluate(tracks: list[Track], frame_w: int, frame_h: int,
                          reasons=["no track with enough keyframes"])
         v.params = snapshot
         return v
-    verdicts = [_evaluate_track(t, timing, frame_w, frame_h, p)
+    verdicts = [_evaluate_track(t, timing, frame_w, frame_h, p,
+                                eff_still)
                 for t in usable]
     # Rank by label, then phase progress, then evidence mass: when
     # two tracks reach the same verdict, the one carrying more mask
@@ -436,6 +465,31 @@ def _evaluate(tracks: list[Track], frame_w: int, frame_h: int,
             "evaluated tracks")
     best.params = snapshot
     return best
+
+
+_STILL_KEYS = ("stillness_window_s", "stillness_min_span_s",
+               "stillness_max_gap_s")
+
+
+def params_snapshot(view: str = "side",
+                    params: dict | None = None) -> dict:
+    """The effective-parameter snapshot evaluate() would stamp.
+
+    Exposed so run records that never reach a verdict (gate miss,
+    pipeline error) still carry the parameters in force.
+    """
+    if view not in VIEWS:
+        raise ValueError(f"unknown view: {view!r}")
+    from .config import FEATURES as _F, RULES as _R
+    p = dict(_R)
+    p.update(VIEWS[view])
+    p.setdefault("min_person_area_frac",
+                 _F["min_person_area_frac"])
+    if params:
+        p.update(params)
+    eff_still = {k: (params or {}).get(k, _F[k]) for k in _STILL_KEYS}
+    return {"view": view, "rules": p, "stillness": eff_still,
+            "params_overridden": bool(params)}
 
 
 def evaluate(tracks: list[Track], frame_w: int, frame_h: int,

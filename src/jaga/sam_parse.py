@@ -163,17 +163,20 @@ def parse_sam_stream(text: str, keep_raster: bool = False) -> tuple[list[Instanc
             return await parsed.final_result()
 
     result = _normalize(lambda: asyncio.run(run()))
-    if not isinstance(result.outcome, CompletedOutcome):
-        raise ValueError(f"SAM response did not complete: {result.outcome}")
-    # Termination is evidenced in the stream text, not delegated to
-    # the library's say-so: a stream cut before its completion event
-    # must not be readable as a completed (possibly empty) result.
+    try:
+        outcome, diagnostics = result.outcome, result.diagnostics
+    except AttributeError as e:
+        raise ValueError(
+            f"parser returned a malformed result: {e}") from e
+    if not isinstance(outcome, CompletedOutcome):
+        raise ValueError(f"SAM response did not complete: {outcome}")
     if ('"type":"response.completed"' not in text
             and "data: [DONE]" not in text):
         raise ValueError(
-            "SAM stream carries no completion evidence (no "
-            "response.completed event and no [DONE] sentinel); "
-            "refusing to read a possibly truncated stream as a result")
+            "SAM stream carries no completion evidence "
+            "(response.completed / [DONE]); refusing to read a "
+            "possibly truncated stream as a result")
+
     if result.diagnostics:
         raise ValueError(f"SAM response carried diagnostics: {result.diagnostics}")
 
