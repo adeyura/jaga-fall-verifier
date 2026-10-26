@@ -1,0 +1,71 @@
+clip_id,dataset,sequence,camera,label,negative_category,split,source_file,file_sha256,accel_file,notes
+urfall_adl-01_cam0,ur_fall,adl-01,cam0,adl,,,adl-01-cam0.mp4,b7b0220c8081a9a8b284174f55b7ca56e5bf9a525af1bfda0ae29c73d06016f8,adl-01-acc.csv,floor-parallel view
+urfall_adl-02_cam0,ur_fall,adl-02,cam0,adl,,,adl-02-cam0.mp4,46d63331b14aeafc0d9cb9ddac1f44f6040a801cad7ba6eba6b930f8a3a5994a,adl-02-acc.csv,floor-parallel view
+urfall_adl-03_cam0,ur_fall,adl-03,cam0,adl,,,adl-03-cam0.mp4,44ec54c8ee227eaa4998fc5356bf8fd51a7d67d205ec44e3bfc3b4754fb3a3fa,adl-03-acc.csv,floor-parallel view
+urfall_adl-04_cam0,ur_fall,adl-04,cam0,adl,,,adl-04-cam0.mp4,2694f06b1277d9de412c3f4d57bcef03f5396866dbfdd17fcc91718083bb8ac0,adl-04-acc.csv,floor-parallel view
+urfall_adl-05_cam0,ur_fall,adl-05,cam0,adl,,,adl-05-cam0.mp4,01265dfff0a718f9b4adfa1a6aeed224d3cd5aa8141c050687703c27c59f607b,adl-05-acc.csv,floor-parallel view
+urfall_adl-06_cam0,ur_fall,adl-06,cam0,adl,,,adl-06-cam0.mp4,a1022b9b4e5dbc2670ac5fbfa3854635c881f12a6a2529234fbf61a7fc635b8d,adl-06-acc.csv,floor-parallel view
+urfall_adl-07_cam0,ur_fall,adl-07,cam0,adl,,,adl-07-cam0.mp4,0b346e78321c0cdfd281a19f3f4fd9cb6d61ed27f4caa1a955ac182c5b66a954,adl-07-acc.csv,floor-parallel view
+urfall_adl-08_cam0,ur_fall,adl-08,cam0,adl,,,adl-08-cam0.mp4,85ae4a3c4539b1bcbb9542ae530f1c1b1ebc0c02124fa417d95f7944789dfa75,adl-08-acc.csv,floor-parallel view
+urfall_adl-09_cam0,ur_fall,adl-09,cam0,adl,,,adl-09-cam0.mp4,6a54b645ff4207cbcb22043f3ab84c22e14261e237418f2cb9ea23b1c8f39672,adl-09-acc.csv,floor-parallel view
+urfall_adl-10_cam0,ur_fall,adl-10,cam0,adl,,,adl-10-cam0.mp4,e8720d9d36f21c2e3222109b92d564ad3f1153927a9cf69dbd0eba0fcd003a23,adl-10-acc.csv,floor-parallel view
+urfall_adl-11_cam0,ur_fall,adl-11,cam0,adl,,,adl-11-cam0.mp4,c798947d701b303ded1ed2b799a1423056564a71fe208639e517adc56ddfad7e,adl-11-acc.csv,floor-parallel view
+urfall_adl-12_cam0,ur_fall,adl-12,cam0,adl,,,adl-12-cam0.mp4,77506f291304616dd5a1a7940ad43acbc5e1debccf675638eea3cea5d9481b42,adl-12-acc.csv,floor-parallel view
+urfall_adl-13_cam0,ur_fall,adl-13,cam0,adl,,,adl-13-cam0.mp4,80a371d2cdbf5dcf277b7aa45539da6c04b778192aba45f0873a428b4d16727a,adl-13-acc.csv,floor-parallel view
+urfall_adl-14_cam0,ur_fall,adl-14,cam0,adl,,,adl-14-cam0.mp4,d3d2f3e54b52da1d43b0445eb2f914cc1ea6922330dacb6f55ef65da3065b44e,adl-14-acc.csv,floor-parallel view
+urfall_adl-15_cam0,ur_fall,adl-15,cam0,adl,,,adl-15-cam0.mp4,202d009146a01f8cd367e89dab06866082f59f12934a72898bbe450b65d61768,adl-15-acc.csv,floor-parallel view
+urfall_adl-16_cam0,ur_fall,adl-16,cam0,adl,,,adl-16-cam0.mp4,9eb9d093c0fe04344591b2c2caf0d7d6204189d58a4a160b76d7eed7bf3b0f55,adl-16-acc.csv,floor-parallel view
+urfall_adl-17_cam0,ur_fall,adl-17,cam0,adl,,,adl-17-cam0.mp4,ef2564f6680a4a2b790c67d562a77737ee005d8b0d8ab6c1ce92f83123100c93,adl-17-acc.csv,floor-parallel view
+urfall_adl-18_cam0,ur_fall,adl-18,cam0,adl,,,adl-18-cam0.mp4,38710e818ebef54609801f1af69c513d23a78a72b5793247aa3e052965fd63f6,adl-18-acc.csv,floor-parallel view
+urfall_adl-19_cam0,ur_fall,adl-19,cam0,adl,,,adl-19-cam0.mp4,4152673f37405d293ed911850742fadb367e7f0d8fafed28211b4f812802ebcd,adl-19-acc.csv,floor-parallel view
+urfall_adl-20_cam0,ur_fall,adl-20,cam0,adl,,,adl-20-cam0.mp4,7524782dca9a9ee7a6cd215514bef372e132a3c9e7ad4786ea073560496ecc39,adl-20-acc.csv,floor-parallel view
+urfall_adl-21_cam0,ur_fall,adl-21,cam0,adl,,,adl-21-cam0.mp4,aa6a682ae5dd200cbc6b70592396edeec06a6ea356cdd81eb570a0a75499f0a2,adl-21-acc.csv,floor-parallel view
+urfall_adl-22_cam0,ur_fall,adl-22,cam0,adl,,,adl-22-cam0.mp4,4e390eaba4ba23fc4a60ca8072e6a47254b8a340e6d9f6afe32d4fc617fadc65,adl-22-acc.csv,floor-parallel view
+urfall_adl-23_cam0,ur_fall,adl-23,cam0,adl,,,adl-23-cam0.mp4,5478ba6cc9ab95b3ee865ae619cc26d29b1f7e1280a0ce10bf5596fd85117926,adl-23-acc.csv,floor-parallel view
+urfall_adl-24_cam0,ur_fall,adl-24,cam0,adl,,,adl-24-cam0.mp4,d1fcf55cc095f7e15958768301c54816e2ba3745902192746bce7615d08121a9,adl-24-acc.csv,floor-parallel view
+urfall_adl-25_cam0,ur_fall,adl-25,cam0,adl,,,adl-25-cam0.mp4,243a9c9d04a58bc7f32e51bb608844a02ca0e966619f7d26272047c0ed5ef7bb,adl-25-acc.csv,floor-parallel view
+urfall_adl-26_cam0,ur_fall,adl-26,cam0,adl,,,adl-26-cam0.mp4,d0bd6d7495adeeca01e7d167d005b87c2ee1c31319be2541375e8386511f5ec3,adl-26-acc.csv,floor-parallel view
+urfall_adl-27_cam0,ur_fall,adl-27,cam0,adl,,,adl-27-cam0.mp4,10467f717f75e2b4a13c4112961f1fd759483a3255cc9c4a51d11867773cef7d,adl-27-acc.csv,floor-parallel view
+urfall_adl-28_cam0,ur_fall,adl-28,cam0,adl,,,adl-28-cam0.mp4,cb65cc38f7f15c34e5678b91dbb48b4ec57bfb9c71e875f648aebe3788834536,adl-28-acc.csv,floor-parallel view
+urfall_adl-29_cam0,ur_fall,adl-29,cam0,adl,,,adl-29-cam0.mp4,d6fad7b0cdf5bcf0edd1a8b698f16a3787d8ad5aa1724569395438b2ff28f269,adl-29-acc.csv,floor-parallel view
+urfall_adl-30_cam0,ur_fall,adl-30,cam0,adl,,,adl-30-cam0.mp4,ed5734796d4aefee14edf6a078841c05c7d45d60b149b900ea78ff00c67614f4,adl-30-acc.csv,floor-parallel view
+urfall_adl-31_cam0,ur_fall,adl-31,cam0,adl,,,adl-31-cam0.mp4,fb886e065a182ac65673ae5d3e70665eaeca7efc54d66e65de5336994c9fdec9,adl-31-acc.csv,floor-parallel view
+urfall_adl-32_cam0,ur_fall,adl-32,cam0,adl,,,adl-32-cam0.mp4,cd788210d3f0f9256b5582294914db56bcdd0bf048e7dc9e8a16d6626a77e3a1,adl-32-acc.csv,floor-parallel view
+urfall_adl-33_cam0,ur_fall,adl-33,cam0,adl,,,adl-33-cam0.mp4,8dff4eaeb8f57b465c4c34534606b968dc18aacfbc21f096eaced78f1a569c98,adl-33-acc.csv,floor-parallel view
+urfall_adl-34_cam0,ur_fall,adl-34,cam0,adl,,,adl-34-cam0.mp4,0900de434a17473ecb6272571f33595e0b449887cf68865424b189236ee632e2,adl-34-acc.csv,floor-parallel view
+urfall_adl-35_cam0,ur_fall,adl-35,cam0,adl,,,adl-35-cam0.mp4,22b76aa84f4d031263912d51791cbb68dcc9f8f24ca8aa3101b1a8aa6d650d79,adl-35-acc.csv,floor-parallel view
+urfall_adl-36_cam0,ur_fall,adl-36,cam0,adl,,,adl-36-cam0.mp4,59a1e72bca5b58e14b1f21537ce2ee85b4206528d49cdf977c55a48a36d0b913,adl-36-acc.csv,floor-parallel view
+urfall_adl-37_cam0,ur_fall,adl-37,cam0,adl,,,adl-37-cam0.mp4,a93e41c90edf40801a515ba3c5d462d49d71806e8ca92f011601fba270477b41,adl-37-acc.csv,floor-parallel view
+urfall_adl-38_cam0,ur_fall,adl-38,cam0,adl,,,adl-38-cam0.mp4,7c85e0c6b9ad7e5b9b2cfc68112e2c18d83c9a3ea9f1b3b56a5e8f4855a234af,adl-38-acc.csv,floor-parallel view
+urfall_adl-39_cam0,ur_fall,adl-39,cam0,adl,,,adl-39-cam0.mp4,34fb1ef5e81a450b2680acc50df5b783927410b393e6a7af79dc92dd1dcc6f1e,adl-39-acc.csv,floor-parallel view
+urfall_adl-40_cam0,ur_fall,adl-40,cam0,adl,,,adl-40-cam0.mp4,e47cd358238c17200f3521bf67e0fda539edd893629a9efb9dc5b435cc14dca9,adl-40-acc.csv,floor-parallel view
+urfall_fall-01_cam1,ur_fall,fall-01,cam1,fall,,,fall-01-cam1.mp4,eb7184265b66c95f2998eb526ece3c83667bfc747bcef805af8e0621c7913849,fall-01-acc.csv,ceiling view; class-conditional camera confound vs adl cam0
+urfall_fall-02_cam1,ur_fall,fall-02,cam1,fall,,,fall-02-cam1.mp4,aaba2c0b7e540c404f0d2da545df342be52de08966d9a7bd136417270b5ef8aa,fall-02-acc.csv,ceiling view; class-conditional camera confound vs adl cam0
+urfall_fall-03_cam1,ur_fall,fall-03,cam1,fall,,,fall-03-cam1.mp4,c033783409b0ca60ac686352e45b4d7fa1467a2402662b19a0e13c55c20e6a65,fall-03-acc.csv,ceiling view; class-conditional camera confound vs adl cam0
+urfall_fall-04_cam1,ur_fall,fall-04,cam1,fall,,,fall-04-cam1.mp4,ed29339120f253ec2031345187d1d8eded3d6a959242e3d0d6cc1b53b90cc905,fall-04-acc.csv,ceiling view; class-conditional camera confound vs adl cam0
+urfall_fall-05_cam1,ur_fall,fall-05,cam1,fall,,,fall-05-cam1.mp4,0b02b8390845ee454f01b10b6829b4e1b338bfb306266a62fea484468c12992a,fall-05-acc.csv,ceiling view; class-conditional camera confound vs adl cam0
+urfall_fall-06_cam1,ur_fall,fall-06,cam1,fall,,,fall-06-cam1.mp4,6a6e0b741061672b20a1fe0c2a430204bca3c86b4c57a161e24df6e2c4c4f566,fall-06-acc.csv,ceiling view; class-conditional camera confound vs adl cam0
+urfall_fall-07_cam1,ur_fall,fall-07,cam1,fall,,,fall-07-cam1.mp4,3ddee1ca302e4055db19bb000a137b61dd7d8347954c85664f78a9f9e392a12f,fall-07-acc.csv,ceiling view; class-conditional camera confound vs adl cam0
+urfall_fall-08_cam1,ur_fall,fall-08,cam1,fall,,,fall-08-cam1.mp4,8818854b4ff5c1b32765fb853e4721e3c04b0135587aac3158229da2a3396e03,fall-08-acc.csv,ceiling view; class-conditional camera confound vs adl cam0
+urfall_fall-09_cam1,ur_fall,fall-09,cam1,fall,,,fall-09-cam1.mp4,038bd58e1df40f11e2b0c95bacc428fb5ea394cf4c09a08e3c8c1678803445e9,fall-09-acc.csv,ceiling view; class-conditional camera confound vs adl cam0
+urfall_fall-10_cam1,ur_fall,fall-10,cam1,fall,,,fall-10-cam1.mp4,0400d531a1a6490641ca4e95fa145ce16b880bd2ff447c4487d395979a9b25ba,fall-10-acc.csv,ceiling view; class-conditional camera confound vs adl cam0
+urfall_fall-11_cam1,ur_fall,fall-11,cam1,fall,,,fall-11-cam1.mp4,d5d597e05f82bd74fc64861411a6a3d1e3f43a08b192ebfd7c794143746d5e14,fall-11-acc.csv,ceiling view; class-conditional camera confound vs adl cam0
+urfall_fall-12_cam1,ur_fall,fall-12,cam1,fall,,,fall-12-cam1.mp4,b1794300f2ed0d3cee94a5a9d9e97973aa739ac49d448f62f465560d90d6e56d,fall-12-acc.csv,ceiling view; class-conditional camera confound vs adl cam0
+urfall_fall-13_cam1,ur_fall,fall-13,cam1,fall,,,fall-13-cam1.mp4,f905a093edc808dae9c5337a22f55805eea785caa1bfe5ebb48c879a91dc8aea,fall-13-acc.csv,ceiling view; class-conditional camera confound vs adl cam0
+urfall_fall-14_cam1,ur_fall,fall-14,cam1,fall,,,fall-14-cam1.mp4,757de23c4de0289753bd016382626280464ee3eaed0553a9a378f040e177d1c7,fall-14-acc.csv,ceiling view; class-conditional camera confound vs adl cam0
+urfall_fall-15_cam1,ur_fall,fall-15,cam1,fall,,,fall-15-cam1.mp4,c591f061c9af0db41c693be3008f7c1edfd44ff171c6dbd5c5b52a91977792a6,fall-15-acc.csv,ceiling view; class-conditional camera confound vs adl cam0
+urfall_fall-16_cam1,ur_fall,fall-16,cam1,fall,,,fall-16-cam1.mp4,f63f939258ceb3cdd54e0135600141de980d09729994dd3023307159b2e00d84,fall-16-acc.csv,ceiling view; class-conditional camera confound vs adl cam0
+urfall_fall-17_cam1,ur_fall,fall-17,cam1,fall,,,fall-17-cam1.mp4,a399b988dfb1f1b786224b46befe739fd36dff80b8f460bb13e8ede51690007a,fall-17-acc.csv,ceiling view; class-conditional camera confound vs adl cam0
+urfall_fall-18_cam1,ur_fall,fall-18,cam1,fall,,,fall-18-cam1.mp4,c2fdc32da5bb7fcb433b07af47b995ff2c3632980f50a6101458d7520d558982,fall-18-acc.csv,ceiling view; class-conditional camera confound vs adl cam0
+urfall_fall-19_cam1,ur_fall,fall-19,cam1,fall,,,fall-19-cam1.mp4,cfdfd7f6f03c9b00b9566cb6918bc177a43a3a4fd5472779a6a4e8510d1336ba,fall-19-acc.csv,ceiling view; class-conditional camera confound vs adl cam0
+urfall_fall-20_cam1,ur_fall,fall-20,cam1,fall,,,fall-20-cam1.mp4,b8079f3388dc457513ad94ec48a908b375c0d5859f2404e23744847c61178cb1,fall-20-acc.csv,ceiling view; class-conditional camera confound vs adl cam0
+urfall_fall-21_cam1,ur_fall,fall-21,cam1,fall,,,fall-21-cam1.mp4,e39d4e7dce3277fe9905980dbc6a76e4a9153268a8b8e4475db4cf12d0668212,fall-21-acc.csv,ceiling view; class-conditional camera confound vs adl cam0
+urfall_fall-22_cam1,ur_fall,fall-22,cam1,fall,,,fall-22-cam1.mp4,be7189ded805cc381142067ba5b04edc551b7bf3bea47a21f0f0b3c9deaabbe2,fall-22-acc.csv,ceiling view; class-conditional camera confound vs adl cam0
+urfall_fall-23_cam1,ur_fall,fall-23,cam1,fall,,,fall-23-cam1.mp4,d9fbc02e817d9ac04dba69269903c4eb19e8a40dfc75f20c0b4cf43629e4973e,fall-23-acc.csv,ceiling view; class-conditional camera confound vs adl cam0
+urfall_fall-24_cam1,ur_fall,fall-24,cam1,fall,,,fall-24-cam1.mp4,4a460c9e856fb566f53786ebedde971c51d0312706d7cf2948336141d1934311,fall-24-acc.csv,ceiling view; class-conditional camera confound vs adl cam0
+urfall_fall-25_cam1,ur_fall,fall-25,cam1,fall,,,fall-25-cam1.mp4,f2d4719afc06c4389fb52b655001db3a6950bba4d68079708a3e777b4a0b21aa,fall-25-acc.csv,ceiling view; class-conditional camera confound vs adl cam0
+urfall_fall-26_cam1,ur_fall,fall-26,cam1,fall,,,fall-26-cam1.mp4,358aab61c29e1ccfb3104bc2d69bd0742a19250d5563b81beb133352235f79a5,fall-26-acc.csv,ceiling view; class-conditional camera confound vs adl cam0
+urfall_fall-27_cam1,ur_fall,fall-27,cam1,fall,,,fall-27-cam1.mp4,6591364ff38b5cddf71c025ddf853b2517ee5fedc24d41d98da7fb24b8e387ca,fall-27-acc.csv,ceiling view; class-conditional camera confound vs adl cam0
+urfall_fall-28_cam1,ur_fall,fall-28,cam1,fall,,,fall-28-cam1.mp4,d1339797a5ae26f815a642e1da7e9dd8adc91aa8f05569040d7d01665b03a2f7,fall-28-acc.csv,ceiling view; class-conditional camera confound vs adl cam0
+urfall_fall-29_cam1,ur_fall,fall-29,cam1,fall,,,fall-29-cam1.mp4,b22a7dc1c4de6afb212a72f194575db70365a046fc89a67a2dae1b2665307619,fall-29-acc.csv,ceiling view; class-conditional camera confound vs adl cam0
+urfall_fall-30_cam1,ur_fall,fall-30,cam1,fall,,,fall-30-cam1.mp4,bb6b8c995cc2d3dcae7708d6341a2a0bc85c55ad76d674a06e609d9675217851,fall-30-acc.csv,ceiling view; class-conditional camera confound vs adl cam0

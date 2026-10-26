@@ -606,6 +606,240 @@
       "url": "http://fenix.ur.edu.pl/~mkepski/ds/data/adl-21-acc.csv",
       "bytes": 17649,
       "sha256": "3ae606bac3ca49c322703519338d0c79e9ec92de2faf09a83e75959d823966b4"
+    },
+    {
+      "filename": "adl-21-cam0.mp4",
+      "url": "http://fenix.ur.edu.pl/~mkepski/ds/data/adl-21-cam0.mp4",
+      "bytes": 2334630,
+      "sha256": "aa6a682ae5dd200cbc6b70592396edeec06a6ea356cdd81eb570a0a75499f0a2"
+    },
+    {
+      "filename": "adl-22-acc.csv",
+      "url": "http://fenix.ur.edu.pl/~mkepski/ds/data/adl-22-acc.csv",
+      "bytes": 15111,
+      "sha256": "5d835e884e2ae39ad69df38597123ea72eb4666080dc9268143173ce8ca69f5d"
+    },
+    {
+      "filename": "adl-22-cam0.mp4",
+      "url": "http://fenix.ur.edu.pl/~mkepski/ds/data/adl-22-cam0.mp4",
+      "bytes": 1989087,
+      "sha256": "4e390eaba4ba23fc4a60ca8072e6a47254b8a340e6d9f6afe32d4fc617fadc65"
+    },
+    {
+      "filename": "adl-23-acc.csv",
+      "url": "http://fenix.ur.edu.pl/~mkepski/ds/data/adl-23-acc.csv",
+      "bytes": 14751,
+      "sha256": "2ca400b3660bb799551e45c7a1063ffaa3ecc79c110744c7a645047f64fddc26"
+    },
+    {
+      "filename": "adl-23-cam0.mp4",
+      "url": "http://fenix.ur.edu.pl/~mkepski/ds/data/adl-23-cam0.mp4",
+      "bytes": 1820847,
+      "sha256": "5478ba6cc9ab95b3ee865ae619cc26d29b1f7e1280a0ce10bf5596fd85117926"
+    },
+    {
+      "filename": "adl-24-acc.csv",
+      "url": "http://fenix.ur.edu.pl/~mkepski/ds/data/adl-24-acc.csv",
+      "bytes": 7553,
+      "sha256": "96332427f69f5d58e7576a9f056635c866cb01fbcd36168f063ccac05d885b01"
+    },
+    {
+      "filename": "adl-24-cam0.mp4",
+      "url": "http://fenix.ur.edu.pl/~mkepski/ds/data/adl-24-cam0.mp4",
+      "bytes": 549317,
+      "sha256": "d1fcf55cc095f7e15958768301c54816e2ba3745902192746bce7615d08121a9"
+    },
+    {
+      "filename": "adl-25-acc.csv",
+      "url": "http://fenix.ur.edu.pl/~mkepski/ds/data/adl-25-acc.csv",
+      "bytes": 5697,
+      "sha256": "71046943b072058ace922d7a3b7045325bbe766a037262709f96847f934aedbd"
+    },
+    {
+      "filename": "adl-25-cam0.mp4",
+      "url": "http://fenix.ur.edu.pl/~mkepski/ds/data/adl-25-cam0.mp4",
+      "bytes": 866916,
+      "sha256": "243a9c9d04a58bc7f32e51bb608844a02ca0e966619f7d26272047c0ed5ef7bb"
+    },
+    {
+      "filename": "adl-26-acc.csv",
+      "url": "http://fenix.ur.edu.pl/~mkepski/ds/data/adl-26-acc.csv",
+      "bytes": 15748,
+      "sha256": "832d2ba285938ce97cdfa0cbd5d9fce1dc5224b3c9696c1d0c7223e8c1e88d8a"
+    },
+    {
+      "filename": "adl-26-cam0.mp4",
+      "url": "http://fenix.ur.edu.pl/~mkepski/ds/data/adl-26-cam0.mp4",
+      "bytes": 772272,
+      "sha256": "d0bd6d7495adeeca01e7d167d005b87c2ee1c31319be2541375e8386511f5ec3"
+    },
+    {
+      "filename": "adl-27-acc.csv",
+      "url": "http://fenix.ur.edu.pl/~mkepski/ds/data/adl-27-acc.csv",
+      "bytes": 19385,
+      "sha256": "95fc04c21857df8383388c5aa5c5a9a7317bf32e9e00f77dab10f39f03b1c0aa"
+    },
+    {
+      "filename": "adl-27-cam0.mp4",
+      "url": "http://fenix.ur.edu.pl/~mkepski/ds/data/adl-27-cam0.mp4",
+      "bytes": 799390,
+      "sha256": "10467f717f75e2b4a13c4112961f1fd759483a3255cc9c4a51d11867773cef7d"
+    },
+    {
+      "filename": "adl-28-acc.csv",
+      "url": "http://fenix.ur.edu.pl/~mkepski/ds/data/adl-28-acc.csv",
+      "bytes": 6124,
+      "sha256": "deb28ac6f0390efd67a98868c4980896575bbeebe9f8ae2dff3845a50786ed0a"
+    },
+    {
+      "filename": "adl-28-cam0.mp4",
+      "url": "http://fenix.ur.edu.pl/~mkepski/ds/data/adl-28-cam0.mp4",
+      "bytes": 648948,
+      "sha256": "cb65cc38f7f15c34e5678b91dbb48b4ec57bfb9c71e875f648aebe3788834536"
+    },
+    {
+      "filename": "adl-29-acc.csv",
+      "url": "http://fenix.ur.edu.pl/~mkepski/ds/data/adl-29-acc.csv",
+      "bytes": 20294,
+      "sha256": "1408768185d634f62b6bca0cd5108a94bd2ff7536d38ab41058d58ccc7e83af5"
+    },
+    {
+      "filename": "adl-29-cam0.mp4",
+      "url": "http://fenix.ur.edu.pl/~mkepski/ds/data/adl-29-cam0.mp4",
+      "bytes": 997498,
+      "sha256": "d6fad7b0cdf5bcf0edd1a8b698f16a3787d8ad5aa1724569395438b2ff28f269"
+    },
+    {
+      "filename": "adl-30-acc.csv",
+      "url": "http://fenix.ur.edu.pl/~mkepski/ds/data/adl-30-acc.csv",
+      "bytes": 27374,
+      "sha256": "8bc82baf5140a9e6ba2c0f4b5a159b8f6b180fa6f38f3658e4a018ee8e62611d"
+    },
+    {
+      "filename": "adl-30-cam0.mp4",
+      "url": "http://fenix.ur.edu.pl/~mkepski/ds/data/adl-30-cam0.mp4",
+      "bytes": 3306896,
+      "sha256": "ed5734796d4aefee14edf6a078841c05c7d45d60b149b900ea78ff00c67614f4"
+    },
+    {
+      "filename": "adl-31-acc.csv",
+      "url": "http://fenix.ur.edu.pl/~mkepski/ds/data/adl-31-acc.csv",
+      "bytes": 23053,
+      "sha256": "3e12bae1defa6b8788b77c26075a2b13f5456844a45ba13d8f662108827f70d7"
+    },
+    {
+      "filename": "adl-31-cam0.mp4",
+      "url": "http://fenix.ur.edu.pl/~mkepski/ds/data/adl-31-cam0.mp4",
+      "bytes": 2013943,
+      "sha256": "fb886e065a182ac65673ae5d3e70665eaeca7efc54d66e65de5336994c9fdec9"
+    },
+    {
+      "filename": "adl-32-acc.csv",
+      "url": "http://fenix.ur.edu.pl/~mkepski/ds/data/adl-32-acc.csv",
+      "bytes": 18437,
+      "sha256": "95c4b84cf6d2a43108da3ed481e64da1bd6bff1e07c3a7eeebc30fa01e074ffe"
+    },
+    {
+      "filename": "adl-32-cam0.mp4",
+      "url": "http://fenix.ur.edu.pl/~mkepski/ds/data/adl-32-cam0.mp4",
+      "bytes": 1666663,
+      "sha256": "cd788210d3f0f9256b5582294914db56bcdd0bf048e7dc9e8a16d6626a77e3a1"
+    },
+    {
+      "filename": "adl-33-acc.csv",
+      "url": "http://fenix.ur.edu.pl/~mkepski/ds/data/adl-33-acc.csv",
+      "bytes": 18705,
+      "sha256": "d3f5f63c66298b83be419aa123cdf670b0e0c3d4a21439e5a41089ac3f0630df"
+    },
+    {
+      "filename": "adl-33-cam0.mp4",
+      "url": "http://fenix.ur.edu.pl/~mkepski/ds/data/adl-33-cam0.mp4",
+      "bytes": 1636974,
+      "sha256": "8dff4eaeb8f57b465c4c34534606b968dc18aacfbc21f096eaced78f1a569c98"
+    },
+    {
+      "filename": "adl-34-acc.csv",
+      "url": "http://fenix.ur.edu.pl/~mkepski/ds/data/adl-34-acc.csv",
+      "bytes": 17074,
+      "sha256": "dabf7541bae5f1645c5669137e03cd65a1ee533e12cb9ed3ecb776330389e0bd"
+    },
+    {
+      "filename": "adl-34-cam0.mp4",
+      "url": "http://fenix.ur.edu.pl/~mkepski/ds/data/adl-34-cam0.mp4",
+      "bytes": 1572319,
+      "sha256": "0900de434a17473ecb6272571f33595e0b449887cf68865424b189236ee632e2"
+    },
+    {
+      "filename": "adl-35-acc.csv",
+      "url": "http://fenix.ur.edu.pl/~mkepski/ds/data/adl-35-acc.csv",
+      "bytes": 27487,
+      "sha256": "069980d66a59fecf54456ac25b2bfaa8b6acaf2779bc29fe1b0ef4f72cd90af2"
+    },
+    {
+      "filename": "adl-35-cam0.mp4",
+      "url": "http://fenix.ur.edu.pl/~mkepski/ds/data/adl-35-cam0.mp4",
+      "bytes": 2317434,
+      "sha256": "22b76aa84f4d031263912d51791cbb68dcc9f8f24ca8aa3101b1a8aa6d650d79"
+    },
+    {
+      "filename": "adl-36-acc.csv",
+      "url": "http://fenix.ur.edu.pl/~mkepski/ds/data/adl-36-acc.csv",
+      "bytes": 76307,
+      "sha256": "f25519bae6aea5ab754e01bb8f54619be9466b7a0911766e572234178dcb52a7"
+    },
+    {
+      "filename": "adl-36-cam0.mp4",
+      "url": "http://fenix.ur.edu.pl/~mkepski/ds/data/adl-36-cam0.mp4",
+      "bytes": 2797589,
+      "sha256": "59a1e72bca5b58e14b1f21537ce2ee85b4206528d49cdf977c55a48a36d0b913"
+    },
+    {
+      "filename": "adl-37-acc.csv",
+      "url": "http://fenix.ur.edu.pl/~mkepski/ds/data/adl-37-acc.csv",
+      "bytes": 75240,
+      "sha256": "2b756742dfce69f8f1531be940dc6e9e4592290835cb493e9f4a3cf29e0fac47"
+    },
+    {
+      "filename": "adl-37-cam0.mp4",
+      "url": "http://fenix.ur.edu.pl/~mkepski/ds/data/adl-37-cam0.mp4",
+      "bytes": 2897423,
+      "sha256": "a93e41c90edf40801a515ba3c5d462d49d71806e8ca92f011601fba270477b41"
+    },
+    {
+      "filename": "adl-38-acc.csv",
+      "url": "http://fenix.ur.edu.pl/~mkepski/ds/data/adl-38-acc.csv",
+      "bytes": 76157,
+      "sha256": "76f2c62ff5855a2f1f7b59f6754684055c1b3e3447e2950391420366627e5957"
+    },
+    {
+      "filename": "adl-38-cam0.mp4",
+      "url": "http://fenix.ur.edu.pl/~mkepski/ds/data/adl-38-cam0.mp4",
+      "bytes": 2904677,
+      "sha256": "7c85e0c6b9ad7e5b9b2cfc68112e2c18d83c9a3ea9f1b3b56a5e8f4855a234af"
+    },
+    {
+      "filename": "adl-39-acc.csv",
+      "url": "http://fenix.ur.edu.pl/~mkepski/ds/data/adl-39-acc.csv",
+      "bytes": 17335,
+      "sha256": "7c69e1fb8e68f13d18e8bb60b24c6afd2d09fb944c1e3129480cc3a6b8aefb8b"
+    },
+    {
+      "filename": "adl-39-cam0.mp4",
+      "url": "http://fenix.ur.edu.pl/~mkepski/ds/data/adl-39-cam0.mp4",
+      "bytes": 2236255,
+      "sha256": "34fb1ef5e81a450b2680acc50df5b783927410b393e6a7af79dc92dd1dcc6f1e"
+    },
+    {
+      "filename": "adl-40-acc.csv",
+      "url": "http://fenix.ur.edu.pl/~mkepski/ds/data/adl-40-acc.csv",
+      "bytes": 22498,
+      "sha256": "e04243007a7ad870ca800756935abc84339c92a20eef49f2b9252d8fa64e3f01"
+    },
+    {
+      "filename": "adl-40-cam0.mp4",
+      "url": "http://fenix.ur.edu.pl/~mkepski/ds/data/adl-40-cam0.mp4",
+      "bytes": 2784077,
+      "sha256": "e47cd358238c17200f3521bf67e0fda539edd893629a9efb9dc5b435cc14dca9"
     }
   ]
 }
