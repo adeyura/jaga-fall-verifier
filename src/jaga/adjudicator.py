@@ -63,9 +63,12 @@ class Verdict:
 
 
 def build_body(traces_text: str, image_data_urls: list[str],
-               model: str = DEFAULT_MODEL, max_tokens: int = 6000) -> dict:
+               model: str = DEFAULT_MODEL, max_tokens: int = 6000,
+               image_labels: list[str] | None = None) -> dict:
     content: list[dict] = [{"type": "text", "text": traces_text}]
-    for url in image_data_urls:
+    for i, url in enumerate(image_data_urls):
+        if image_labels and i < len(image_labels) and image_labels[i]:
+            content.append({"type": "text", "text": image_labels[i]})
         content.append({"type": "image_url",
                         "image_url": {"url": url}})
     return {
@@ -115,9 +118,11 @@ def parse_verdict(content: str | None, usage: dict | None = None) -> Verdict:
 
 def adjudicate(transport, traces_text: str, image_data_urls: list[str],
                model: str = DEFAULT_MODEL,
-               max_tokens: int = 6000) -> Verdict:
+               max_tokens: int = 6000,
+               image_labels: list[str] | None = None) -> Verdict:
     """Run one adjudication. Transport errors become unusable verdicts."""
-    body = build_body(traces_text, image_data_urls, model, max_tokens)
+    body = build_body(traces_text, image_data_urls, model, max_tokens,
+                      image_labels=image_labels)
     try:
         response = transport(body)
     except Exception as e:  # timeouts, HTTP errors, helper failures

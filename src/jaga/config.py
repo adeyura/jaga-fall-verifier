@@ -35,6 +35,12 @@ FEATURES = {
     "stillness_max_gap_s": 1.0,  # max unobserved gap inside that span
     "bottom_band_frac": 0.2,     # mask rows counted as the base band
     "min_mask_area_px": 25,      # below this a mask is segmentation noise
+    "min_person_area_frac": 0.01,  # a person-sized mask, as a fraction
+                                 # of frame area. Measured at 320x240:
+                                 # person ~5000 px (~6.5%), the persistent
+                                 # ceiling fixture ~150 px (~0.2%), feet
+                                 # at entry ~510 px. Dev-provisional;
+                                 # the freeze re-derives it per view.
 }
 
 TIMING = {
@@ -71,9 +77,29 @@ RULES = {
                                  # before it may read as satisfied
 }
 
+# Per-view rules overrides and posture models. A view is a camera
+# geometry, not a dataset: side covers frontal/lateral/corner views,
+# ceiling is the straight-down view. The ceiling posture model is the
+# construction used for enter-and-fall ceiling clips: the
+# pre-descent phase is unobservable by construction (the subject
+# enters and falls within about half a second), so the rules cap at
+# uncertain in this view and the adjudicator decides from frames.
+# Ceiling window values were set 2026-10-27 from the full UR Fall
+# cam1 diagnostics distribution on the RGB-half signal (n=27 falls
+# with a detected descent of 30; cores 0.17-1.27 s, median 0.57,
+# p10 0.31, p90 1.02), padded modestly at both ends. UR Fall is a
+# diagnostics-only dataset in this protocol, so its full fall set is
+# legitimately development data; the frozen test sets are side view
+# and never touch this window.
+VIEWS = {
+    "side": {"posture_model": "tilt"},
+    "ceiling": {"posture_model": "ceiling",
+                "descent_min_s": 0.15, "descent_max_s": 1.35},
+}
+
 
 def config_hash() -> str:
     blob = json.dumps({"gate": GATE, "features": FEATURES, "timing": TIMING,
-                       "rules": RULES},
+                       "rules": RULES, "views": VIEWS},
                       sort_keys=True).encode()
     return hashlib.sha256(blob).hexdigest()[:16]

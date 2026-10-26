@@ -38,6 +38,9 @@ FIXTURE = next((p for p in _FIXTURE_CANDIDATES if p and Path(p).exists()),
 
 RESULTS = []
 
+GOOD = ('{"for_fall": "a", "for_benign": "b", "data_quality": "c", '
+        '"discriminator": "d", "verdict": "fall", "confidence": 0.8}')
+
 
 def check(name):
     def deco(fn):
@@ -45,7 +48,9 @@ def check(name):
             fn()
             RESULTS.append((name, "PASS", ""))
         except Exception as e:  # noqa: BLE001 - the harness reports, not hides
-            RESULTS.append((name, "FAIL", f"{type(e).__name__}: {e}"))
+            import traceback as _tb
+            RESULTS.append((name, "FAIL", f"{type(e).__name__}: {e}\n"
+                            + _tb.format_exc()))
         return fn
     return deco
 
@@ -78,9 +83,9 @@ def timing(a, b, core=None):
     return TimingResult([iv], iv, 0.01, 0.1, 30.0)
 
 
-def run_rules(spec, tm=None):
+def run_rules(spec, tm=None, view="side"):
     tracks, _ = build_tracks(spec, W, H)
-    return evaluate(tracks, W, H, timing=tm)
+    return evaluate(tracks, W, H, timing=tm, view=view)
 
 
 FALL_FRAMES = [(0.0, [inst(UP, 85)]), (0.5, [inst(UP, 85)]),
@@ -196,9 +201,25 @@ def _():
     assert v.label == "fall_candidate" and v.config_hash
 
 
-@check("rules: slow lie-down is negative (descent too slow)")
+@check("rules: slow lie-down escalates under the duration safeguard (P3)")
 def _():
-    assert run_rules(FALL_FRAMES, timing(0.2, 2.4)).label == "negative"
+    # Duration alone is no longer a veto: a slow descent whose other
+    # phases are all fall-consistent escalates to the adjudicator
+    # instead of reading as a confident negative (P3 safeguard).
+    v = run_rules(FALL_FRAMES, timing(0.2, 2.4))
+    assert v.label == "uncertain", (v.label, v.reasons)
+    assert "outside" in v.reasons[0]
+
+
+@check("rules: slow descent plus a posture contradiction stays negative (P3)")
+def _():
+    sit = [(0.0, [inst(UP, 85)]), (0.5, [inst(UP, 85)]),
+           (1.0, [inst(SEATED, 80)]), (1.5, [inst(SEATED, 80)]),
+           (2.0, [inst(SEATED, 80)]), (2.5, [inst(SEATED, 80)]),
+           (3.0, [inst(SEATED, 80)]), (3.5, [inst(SEATED, 80)]),
+           (4.0, [inst(SEATED, 80)])]
+    v = run_rules(sit, timing(0.2, 2.4))
+    assert v.label == "negative", (v.label, v.reasons)
 
 
 @check("rules: fast sit-down is negative (never horizontal)")
@@ -319,6 +340,159 @@ def _():
     assert v.label == "fall_candidate", (v.label, v.reasons)
 
 
+@check("rules: ceiling fall caps at uncertain, pre unobservable (P2)")
+def _():
+    lying = (411, 26, 495, 182)
+    spec = [(3.0, [inst((431, 1, 517, 105), 71, elong=1.1)]),
+            (3.5, [inst(lying, 70, elong=2.86)]),
+            (4.0, [inst(lying, 82, elong=2.3)]),
+            (4.5, [inst(lying, 82, elong=2.2)]),
+            (5.0, [inst(lying, 82, elong=2.24)]),
+            (5.5, [inst(lying, 82, elong=2.24)]),
+            (6.0, [inst(lying, 82, elong=2.24)]),
+            (6.5, [inst(lying, 82, elong=2.24)])]
+    tm = timing(2.9, 3.7, core=(3.0, 3.6))
+    v = run_rules(spec, tm, view="ceiling")
+    assert v.label == "uncertain", (v.label, v.reasons)
+    assert v.phases["pre_posture"].satisfied is None
+    assert v.phases["post_posture"].satisfied is True
+    assert v.phases["stillness"].satisfied is True
+
+
+@check("rules: ceiling mover after the burst is negative (P2)")
+def _():
+    lying = (411, 26, 495, 182)
+    moved = (451, 26, 535, 182)  # 40 px shift: same track, real movement
+    spec = [(3.0, [inst((431, 1, 517, 105), 71, elong=1.1)]),
+            (3.5, [inst(lying, 70, elong=2.86)]),
+            (4.0, [inst(lying, 82, elong=2.3)]),
+            (4.5, [inst(lying, 82, elong=2.2)]),
+            (5.0, [inst(moved, 82, elong=2.24)]),
+            (5.5, [inst(moved, 82, elong=2.24)]),
+            (6.0, [inst(moved, 82, elong=2.24)]),
+            (6.5, [inst(moved, 82, elong=2.24)])]
+    v = run_rules(spec, timing(2.9, 3.7, core=(3.0, 3.6)), view="ceiling")
+    assert v.label == "negative", (v.label, v.reasons)
+
+
+@check("rules: ceiling track fragmentation escalates, never dismisses (P2)")
+def _():
+    # An 80 px jump breaks box-IoU association; the fallen person's
+    # stillness evidence fragments across two tracks. Fragmented
+    # evidence is missing evidence: uncertain, not negative.
+    lying = (411, 26, 495, 182)
+    moved = (491, 26, 575, 182)
+    spec = [(3.0, [inst((431, 1, 517, 105), 71, elong=1.1)]),
+            (3.5, [inst(lying, 70, elong=2.86)]),
+            (4.0, [inst(lying, 82, elong=2.3)]),
+            (4.5, [inst(lying, 82, elong=2.2)]),
+            (5.0, [inst(moved, 82, elong=2.24)]),
+            (5.5, [inst(moved, 82, elong=2.24)]),
+            (6.0, [inst(moved, 82, elong=2.24)]),
+            (6.5, [inst(moved, 82, elong=2.24)])]
+    v = run_rules(spec, timing(2.9, 3.7, core=(3.0, 3.6)), view="ceiling")
+    assert v.label == "uncertain", (v.label, v.reasons)
+
+
+@check("rules: ceiling elongated person, descent unseen -> uncertain (P2/H3)")
+def _():
+    lying = (411, 26, 495, 182)
+    spec = [(3.0, [inst(lying, 70, elong=2.86)]),
+            (3.5, [inst(lying, 82, elong=2.3)]),
+            (4.0, [inst(lying, 82, elong=2.2)]),
+            (4.5, [inst(lying, 82, elong=2.24)])]
+    v = run_rules(spec, None, view="ceiling")
+    assert v.label == "uncertain", (v.label, v.reasons)
+
+
+@check("rules: a pocket-sized persistent track loses ties to the person (area)")
+def _():
+    # A 150 px artifact present in every keyframe and the actual
+    # person both reach uncertain; the merged verdict must carry the
+    # person's track, because downstream stages read its record.
+    speck = (280, 0, 311, 8)
+    lying = (111, 26, 195, 182)
+    spec = [(3.0, [inst(speck, 5, elong=3.4, oid="0"),
+                   inst((111, 1, 197, 105), 71, elong=1.1, oid="1")]),
+            (3.5, [inst(speck, 5, elong=3.4, oid="0"),
+                   inst(lying, 70, elong=2.86, oid="1")]),
+            (4.0, [inst(speck, 5, elong=3.4, oid="0"),
+                   inst(lying, 82, elong=2.3, oid="1")]),
+            (4.5, [inst(speck, 5, elong=3.4, oid="0"),
+                   inst(lying, 82, elong=2.2, oid="1")]),
+            (5.0, [inst(speck, 5, elong=3.4, oid="0"),
+                   inst(lying, 82, elong=2.24, oid="1")])]
+    v = run_rules(spec, timing(2.9, 3.7, core=(3.0, 3.6)), view="ceiling")
+    assert v.label == "uncertain", (v.label, v.reasons)
+    person_tracks = [t for t in build_tracks(spec, W, H)[0]
+                     if sum(f.area_px for f in t.frames) > 5000]
+    assert v.track_id == person_tracks[0].track_id, (
+        v.track_id, [t.track_id for t in build_tracks(spec, W, H)[0]])
+
+
+@check("rules: ceiling fixture alone cannot author person-present (M1)")
+def _():
+    # Only the pocket-sized artifact track exists after the burst:
+    # the post phase must read False (no person-sized mask), never
+    # True on frame count alone.
+    speck = (280, 0, 311, 8)
+    spec = [(t * 0.5, [inst(speck, 5, elong=3.4)])
+            for t in range(7, 14)]  # 3.5 .. 6.5
+    spec = [(3.0, [inst(speck, 5, elong=3.4)])] + spec
+    v = run_rules(spec, timing(2.9, 3.7, core=(3.0, 3.6)), view="ceiling")
+    assert v.phases["post_posture"].satisfied is False, v.phases
+    assert "person-sized" in v.phases["post_posture"].detail["note"]
+    assert v.label == "negative", (v.label, v.reasons)
+
+
+@check("rules: unmeasurable posture plus unseen descent is uncertain (M3)")
+def _():
+    round_mask = (100, 60, 160, 150)  # elongation ~1.1: axis abstains
+    spec = [(t * 0.5, [inst(round_mask, 30, elong=1.1)])
+            for t in range(6)]
+    v = run_rules(spec, None)
+    assert v.label == "uncertain", (v.label, v.reasons)
+    assert v.phases["descent"].satisfied is None
+
+
+@check("harness: adjudication labels never leak into the clip outcome (H1)")
+def _():
+    import csv as _csv
+    from pathlib import Path as _Path
+    from jaga.harness import run_clip
+    from jaga.sam_runner import ClipRun
+
+    root = ROOT
+    rows = list(_csv.DictReader(
+        (root / "results" / "manifest_draft.csv").open()))
+    row = next(r for r in rows if r["clip_id"] == "urfall_adl-01_cam0")
+    tracks, _ = build_tracks(FALL_FRAMES, W, H)
+
+    class StubRunner:
+        def run_keyframes(self, clip_id, window):
+            return ClipRun(clip_id=clip_id, tracks=tracks,
+                           frame_w=W, frame_h=H)
+
+    def fake_transport(body):
+        return {"choices": [{"message": {"content": GOOD}}], "usage": {}}
+
+    def picker(window):
+        return [], ["Keyframe at 0.0 s:"]
+
+    rec = run_clip(root / row["video_path"], row, StubRunner(),
+                   root / "cache",
+                   adjudicate_labels=frozenset(
+                       {"uncertain", "negative", "fall_candidate"}),
+                   transport=fake_transport, image_picker=picker)
+    from jaga.harness import _merge_labels
+    expected = _merge_labels([s["rules_label"] for s in rec["segments"]])
+    assert rec["outcome"] == expected, (rec["outcome"], expected)
+    assert rec["outcome"] in ("fall_candidate", "uncertain", "negative",
+                               "no_evidence")
+    assert any(s.get("adjudication", {}).get("usable")
+               for s in rec["segments"])
+
+
 @check("timing: core duration excludes a merged low tail")
 def _():
     e = np.concatenate([np.full(200, 0.5), np.full(18, 9.0),
@@ -342,8 +516,6 @@ def _():
 
 
 # ------------------------------------------------------- adjudicator
-GOOD = ('{"for_fall": "a", "for_benign": "b", "data_quality": "c", '
-        '"discriminator": "d", "verdict": "fall", "confidence": 0.8}')
 
 
 @check("adjudicator: well-formed verdict parses")

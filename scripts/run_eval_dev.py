@@ -46,9 +46,11 @@ def vm_transport(body: dict) -> dict:
 
 def pick_images(window):
     chosen = [window[0], window[len(window) // 2], window[-1]]
-    return ["data:image/png;base64,"
+    urls = ["data:image/png;base64,"
             + base64.b64encode(p.read_bytes()).decode()
             for _, p in chosen]
+    labels = [f"Keyframe at {t:.1f} s:" for t, _ in chosen]
+    return urls, labels
 
 
 def main() -> None:
@@ -61,7 +63,8 @@ def main() -> None:
     runner = SamRunner(cache_root, helper_transport(HELPER))
     records = []
     for row in selected:
-        video = ROOT / "data" / "ur_fall" / row["source_file"]
+        video = (ROOT / row["video_path"] if row.get("video_path")
+                 else ROOT / "data" / "ur_fall" / row["source_file"])
         rec = run_clip(video, row, runner, cache_root,
                        adjudicate_labels=ADJUDICATE_ON,
                        transport=vm_transport, image_picker=pick_images)

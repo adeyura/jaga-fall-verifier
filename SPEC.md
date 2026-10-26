@@ -1,13 +1,18 @@
-# Jaga evaluation spec (DRAFT — freezes when the author approves it)
+# Jaga evaluation spec — FROZEN 2026-10-27
 
-This document is the contract the implementation is built to. It is written
-before results exist. Any change after the freeze is a dated commit with a
-stated reason. The test set is run ONCE, after the freeze. All prompt and
-threshold iteration happens on the dev split only.
+This document is the contract the implementation is built to. It was
+written before results existed and froze on 2026-10-27; the
+decisions adopted at the freeze are recorded in DECISIONS.md. Any
+change after the freeze is a dated commit with a stated reason. The
+test set is run ONCE, after the freeze. All prompt and threshold
+iteration happens on the dev split only.
 
 ## Datasets and scope
 
-- Gate scope: UR Fall + Le2i. UP-Fall joins only after the gate decision.
+- Scope (decision D5): the headline datasets are UP-Fall and
+  Le2i. UR Fall is per-view diagnostics only and is never pooled into
+  headline numbers, because in UR Fall the class determines the
+  camera. UP-Fall's two views of one event count as one sample.
 - Accepted risk, stated plainly: decoded frame counts are reconciled
   against container duration with a tolerance of max(2 frames, 10%) as a
   variable-frame-rate allowance. A loss inside that tolerance could in
@@ -19,17 +24,26 @@ threshold iteration happens on the dev split only.
   views stated and are never pooled with Le2i's room-corner views.
   Every file is a side-by-side composite: depth map (left 320x240) and
   RGB (right 320x240) in one 640x240 frame (visually verified
-  2026-10-27). The pipeline currently processes the composite as one
-  image; SAM segments the RGB half's person, and a persistent
-  ~150 px false-positive instance (a ceiling fixture in the RGB half)
-  appears in every cam1 keyframe. Cam1 event structure: the subject
+  2026-10-27). Preprocessing (decision P1, adopted): every UR
+  Fall clip is cropped to its RGB half before any processing. The
+  layout was verified by an automated per-file audit (70/70 files:
+  the right half is markedly more colorful than the near-grayscale
+  depth half), and gate recall was re-measured on the cropped signal
+  (30/30 falls). On the composite, the depth half's speckle held the
+  local-timing noise floor at 0.036-0.068; on the RGB half it is
+  0.0001-0.041. A persistent ~150 px false-positive SAM instance (a
+  ceiling fixture) appears in cam1 keyframes; instances under 1% of
+  frame area are not treated as person evidence for phase decisions
+  (measured: artifact ~150 px ≈ 0.2%, feet at entry ~510 px, fallen
+  person ~5,000 px ≈ 6.5% at 320x240). Cam1 event structure: the subject
   enters from the frame's top edge and falls within about half a
-  second, so pre-descent SAM posture evidence is about one partial
-  keyframe (feet) by the dataset's construction; no SAM prompt variant
-  finds a standing person before entry because there is none in frame.
-- Target frozen set: ~90 clips — 30 falls, ~12 per hard-negative category
-  (fast sit-down, bend to pick up, crouch, intentional lie-down,
-  stumble-and-recover). Existing dataset labels only.
+  second, so pre-descent posture is unobservable by construction; no
+  SAM prompt variant finds a standing person before entry because
+  there is none in frame.
+- Target frozen set: ~90 clips from UP-Fall and Le2i — falls plus
+  ~12 per hard-negative category (fast sit-down, bend to pick up,
+  crouch, intentional lie-down, stumble-and-recover), as the datasets'
+  activity inventories allow. Existing dataset labels only.
 - Stumble-and-recover barely exists in these datasets. Shortfall is reported,
   not papered over. Any self-recorded supplements are labeled as such and
   kept out of benchmark numbers.
@@ -38,10 +52,18 @@ threshold iteration happens on the dev split only.
 
 ## Splits
 
-- Dev/test split frozen in the manifest before the first scored run.
+- Two-split protocol (D5): a dev split for all iteration, and a frozen
+  test split that receives exactly ONE confirmation run after the
+  freeze. Dev/test assignment is frozen in the manifest before the
+  first scored run.
 - Person/event independent where labels allow: frames or clips from the same
   recorded event never appear in both dev and test.
 - UP-Fall's two camera views of one event count as ONE sample.
+- Exception process: a genuine bug found during the confirmation run
+  may be fixed and the run repeated, but every such exception is
+  logged with the bug, the fix, and both runs' numbers.
+- If the frozen test would fall under ~25 events, the split is
+  abandoned and the full frozen set is run once instead (D5).
 
 ## Pipeline under test
 
@@ -54,19 +76,60 @@ threshold iteration happens on the dev split only.
   statistics (segments kept/dropped, seconds flagged, zero-candidate
   flags) are logged to the manifest for every clip.
 - SAM 3.1 (Meta Model API) segments the person on keyframes sampled at
-  3–5 fps; masks are associated across frames locally (IoU tracking).
-- Mask-derived kinematics: bbox aspect ratio, centroid height/velocity,
-  floor-contact area, post-event stillness.
-- Rules state machine: upright → rapid descent (0.4–1.0 s) → horizontal →
-  stillness >= 3 s. Tuned on DEV for ~100% fall recall; precision is the
-  adjudicator's job.
+  2 fps (frozen; about $0.04 of SAM per candidate window at the
+  per-image rate); masks are associated across frames locally by
+  bounding-box IoU tracking (box IoU, not mask IoU — stated plainly).
+- Mask-derived kinematics: bbox aspect ratio and elongation, mask
+  area, centroid height/velocity, floor_proximity (mask bottom edge
+  over frame height), bottom_band_share (share of mask pixels in the
+  bottom band of the person's own mask), post-event stillness. There
+  is no frame-relative "floor-contact area" measure; the earlier
+  draft's phrase is retired.
+- Descent timing is measured locally at native frame rate from the
+  motion signal (timing.py): the descent duration is the interval's
+  core duration (width at half the run's 90th-percentile peak), which
+  excludes recovery tails merged into the same envelope run. The
+  keyframe centroid path is a labeled fallback only: it can establish
+  a fast downward step but leaves duration UNMEASURED, and a verdict
+  resting on it caps at uncertain.
+- Rules state machine, per camera view. Side view: upright → rapid
+  descent → horizontal → stillness. Ceiling view (UR Fall's
+  enter-and-fall construction only, decision P2): pre-descent
+  posture is unobservable by construction; the post phases are
+  person-sized mask presence and stillness; ceiling rules verdicts
+  cap at uncertain and the adjudicator decides from the evidence
+  pack. Safeguard composition (P3, mandatory): all phases are always
+  evaluated, and an out-of-window descent yields a confident negative
+  ONLY when another phase contradicts a fall; when the remaining
+  evidence is fall-consistent or unmeasured, the verdict escalates to
+  uncertain. Missing evidence is always distinct from contradictory
+  evidence.
+- Descent windows, frozen: side view core duration in [0.4, 1.0] s
+  (carried from the design; to be checked against UP-Fall dev-split
+  fall distributions before the confirmation run — any change is a
+  dated amendment made before that run, with the test split
+  untouched). Ceiling view [0.15, 1.35] s, derived 2026-10-27 from
+  the full UR Fall cam1 diagnostics distribution on the cropped
+  signal (n=27 falls with a detected descent, cores 0.17-1.27 s,
+  median 0.57) with modest padding at both ends.
+- Stillness, operationalized as implemented: an observed span of at
+  least 2.5 s inside the 3 s window starting at the descent's end,
+  no unobserved gap over 1.0 s, centroid displacement within the
+  frozen threshold. A shorter observable span reads as unmeasured,
+  never as motion.
 - Candidate window: -2 s to +4 s around the event (the post-event segment is
   the most discriminative evidence). Tunable on dev only.
-- Muse Spark adjudication: 6–10 non-uniformly sampled frames (sparse
-  context, dense descent, 2–3 stillness frames), full frame plus one zoomed
-  person crop, numeric kinematic traces included as text. Structured output
-  (verdict, confidence, rationale), temperature 0, decision threshold frozen
-  on dev.
+- Muse Spark adjudication (evidence form per D3): temporally ordered
+  mask overlays over an aggressively blurred low-resolution
+  background plus the numeric kinematic traces — never raw frames.
+  The verdict must argue both sides (strongest fall case, strongest
+  benign case, data-quality problems, the discriminating
+  observation) and may escalate to uncertain. Temperature 0. The
+  scored evidence form is chosen by an A/B/C comparison on the dev
+  split at equal recall (overlays+traces vs traces-only vs the
+  current frames+traces iteration form) and adopted by dated
+  amendment before the gate run; dev iteration until then is
+  explicitly not the scored form.
 
 ## Metrics (all reported, none cherry-picked)
 
@@ -74,23 +137,47 @@ threshold iteration happens on the dev split only.
 - Precision at dataset prevalence AND false alarms per hour of
   everyday-activity footage.
 - Per-category results for falls and each hard-negative category.
+- Wilson score intervals on every reported proportion (D5).
+- Cascade metrics are first-class (D5): gate recall and the SAM
+  failure/anomaly rate are reported alongside end-to-end numbers, so
+  a stage's losses are never hidden inside a later stage's score.
+- Escalation rate (share of events whose final disposition is a human
+  check rather than a confirmed verdict) and its cost, reported with
+  the scored results (P3).
+- Trivial baselines on the dev split (D5): an aspect-ratio-only
+  classifier and a Spark-only classifier (no rules), so the pipeline
+  must beat the cheap alternatives, not just a strawman.
 - Adjudicator agreement rate: the adjudicator runs twice on the frozen set;
   agreement is reported (below 90% is a finding, not something to hide).
 - Cost and latency per candidate clip, measured, including which SAM
   billing mode applies (video-frame vs per-image rate).
+- At most four result artifacts (D5): the single results file, the
+  manifest, the cascade summary, and the ablation table. No parallel
+  spreadsheets of numbers.
 
-## The ablation and the gate rule — DECISION NEEDED (author)
+## The ablation and the gate rule — ADOPTED (decision D1)
 
 Rules-only vs rules + Muse adjudication, same frozen set, rules baseline
 tuned honestly on dev first (beating a strawman proves nothing).
-Three positions are on the table:
 
-1. Author's original: pivot to the fallback unless Muse clearly wins.
-2. Pivot only if the Muse stage actively hurts (recall drop or
-   added false alarms); a tie keeps Jaga.
-3. Proceed iff Muse cuts false alarms by >= 40–50% relative at zero
-   recall loss on the frozen test set, the rule written here before the
-   first run, decision by hour ~36.
+The gate is PAIRED and runs on the DEV split at about hour 36 of the
+build: the same clips through both arms. The Spark stage is kept
+only if ALL of the following hold:
+
+1. Safety veto: zero additional missed falls versus rules-only. A
+   fall counts as missed only when its final disposition clears it
+   without escalation; an adjudicator "uncertain" escalates to a
+   human check and is an alert, not a miss (and never a silent
+   discard).
+2. At least 40% relative AND at least 3 absolute fewer hard-negative
+   false alarms than rules-only. A hard negative counts as cleared
+   only on a "benign" verdict; "uncertain" escalations are reported
+   as their own line, neither wins nor false alarms.
+3. At least 95% of adjudications return usable structured verdicts.
+
+If the gate fails, the project pivots to the fallback without
+renegotiating the rule. The frozen test split then receives its one
+confirmation run under whichever arm the gate selected.
 
 ## Hour-3 feasibility gate (measured, not argued)
 
@@ -98,18 +185,25 @@ A 10-second candidate clip must process end to end in <= 60 s wall-clock and
 <= $0.05 marginal cost, with person masks usable for tracking, and the actual
 SAM billing mode identified from the first calls. Fail: pivot with evidence.
 
-## Alert policy — DECISION NEEDED (author)
+## Alert policy — ADOPTED (decision D2)
 
-Binary (alert only on verified) vs tiered ladder:
-urgent / check-now / log-only, where uncertainty escalates to a human check
-instead of defaulting to silence, plus a fail-safe alert when cloud
-verification is unavailable. (Recommendation: tiered.)
+Tiered ladder, built as working software: Urgent / Check now / No
+immediate alert. Uncertainty escalates to a check, never to silence,
+and a fail-safe alert fires when cloud verification is unavailable.
+Acknowledgement and escalation (no acknowledgement within the window
+→ next recipient) are part of the software. The consent layer (the
+watched person chooses rooms, hours, recipients, retention) is a
+clearly labeled design mock — "designed, not implemented" — and is
+upgraded to a minimal working slice only if a full spare day remains
+after the evaluation freezes.
 
-## Adjudicator evidence loop — DECISION NEEDED (author)
+## Adjudicator evidence — ADOPTED (decision D3)
 
-One-shot adjudication vs an evidence-gathering loop (the adjudicator may
-request denser frames or a second, wider SAM look before deciding).
-(Positions: build it; or one-sentence reframe only, spend no hours.)
+One-shot adjudication with the evidence form specified under
+"Pipeline under test" (overlays + traces, argue-both-sides,
+escalation allowed). An evidence-gathering loop (the adjudicator
+requesting denser frames or a second SAM look) is NOT built; it is
+deferred explicitly, not silently dropped.
 
 ## Claim discipline
 
@@ -119,56 +213,23 @@ request denser frames or a second, wider SAM look before deciding).
 - No deployment claim. No medical framing. The system is a verifier and a
   response workflow, never a medical device.
 
-## Freeze agenda (builder notes, 2026-10-27 — for the author's freeze pass)
+## Freeze record (2026-10-27)
 
-Items the implementation surfaced that the freeze must settle in the
-spec text itself, so the frozen document and the code say the same
-thing:
-- Keyframe rate: the pipeline text above says SAM at 3-5 fps; the
-  costed runner design uses 2 fps (about $0.04 per candidate window).
-  Freeze one number.
-- Descent timing source: dense local timing (timing.py) is built and
-  the keyframe path is a labeled fallback. The text above still reads
-  as if descent comes from keyframe kinematics.
-- Stillness wording: the implementation requires an observed span of
-  at least 2.5 s inside the trailing 3 s window with no unobserved gap
-  over 1.0 s. Either the spec adopts that operationalization or the
-  implementation tightens to a literal 3.0 s span.
-- "Floor-contact area" is not computed. The computed measures are
-  floor_proximity (mask bottom edge over frame height) and
-  bottom_band_share (share of mask pixels in the bottom band of the
-  person's own mask). Rename in the spec or fund a frame-relative
-  floor-band measure (needs the mask row histogram retained).
-- Association is box IoU, not mask IoU; mask rasters are not retained
-  past feature extraction. Adjudicator overlays and the zoomed person
-  crop need a raster path that does not exist yet.
-- Per-view evidence model (from the first dev shakedown, 2026-10-27):
-  the state machine's posture phases encode a side-view model (image
-  tilt ~ body orientation). In the ceiling view that mapping does not
-  exist, and pre-descent posture is unobservable by construction (see
-  the dataset note). The freeze must decide the ceiling view's
-  evidence model — candidates: pre-phase unobserved-by-construction
-  (rules ceiling = uncertain, adjudicator confirms from frames), or a
-  view-specific posture definition (elongation/area transition). The
-  same pass must decide whether the pipeline crops composites to the
-  RGB half, and whether instances under ~0.2% of frame area are
-  filtered as implausible persons (measured: artifact ~150 px, feet
-  at entry ~510 px, fallen person ~5,000 px, at 640x240).
-- Descent window floor: measured local-timing durations on the first
-  six cam1 falls (run lengths, pre-core revision) spread 0.20-1.13 s;
-  two falls sit under the spec's 0.4 s floor. The freeze must set the
-  window against the dev distribution of CORE durations, per view,
-  before any scored run.
-- Crop composites to the RGB half (measured 2026-10-27, hour 9): on
-  the composite, the depth half's speckle holds the timing floor at
-  0.036-0.068; on the RGB half alone the floor is 0.0001-0.041, fall
-  descent cores measure 0.23-1.27 s and the two ADL bursts 1.57-1.67 s.
-  Recommendation: crop (the RGB half is the camera view the spec
-  describes; the depth channel is a separate modality the design
-  never claimed). The descent window then needs its own per-view
-  setting against these distributions: cam1 fall cores cluster at
-  0.5-1.3 s, so the current [0.4, 1.0] window would still reject
-  real falls at its top edge.
-- The three DECISION NEEDED sections: recommendations on all three
-  plus the dataset methodology were made on 2026-10-27; they wait
-  for the author's approval and are not reproduced in this spec.
+Settled by this freeze: keyframe rate 2 fps; descent from dense local
+timing (core duration) with a labeled keyframe fallback; stillness as
+operationalized above; measures renamed honestly (floor_proximity,
+bottom_band_share, mask area; no floor-contact area); association is
+box IoU; UR Fall composites cropped to the RGB half (P1) with the
+layout audit and gate re-measurement as conditions, both satisfied;
+the per-view evidence model with the ceiling construction and the P3
+safeguard composition (P2/P3); ceiling descent window derived from
+the full cam1 diagnostics distribution; datasets and splits per D5;
+metrics per D5; the gate rule (D1); the alert ladder (D2); the
+adjudicator evidence form and its dev A/B/C selection (D3).
+
+Still open, all pre-gate and none blocking the freeze: the Le2i
+license (author's signature); the UP-Fall dev-split side-view fall
+distribution check against the [0.4, 1.0] s window; the D3 evidence
+A/B/C on dev; dev/test split assignment in the manifest; the D2
+alert-ladder build; the SAM raster path the overlay evidence form
+needs; the outstanding re-verification of the parse/features unit.

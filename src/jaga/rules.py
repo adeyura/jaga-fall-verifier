@@ -45,7 +45,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass, field
 
-from .config import RULES
+from .config import RULES, VIEWS
 from .features import Track, stillness
 from .timing import TimingResult
 
@@ -166,22 +166,45 @@ def _evaluate_window(track: Track, w: _Window, frame_w: int,
     else:
         in_window = p["descent_min_s"] <= w.duration <= p["descent_max_s"]
         phases["descent"] = PhaseEvidence(in_window, detail)
-        if not in_window:
-            return RulesVerdict(
-                "negative", track.track_id, w.source, phases,
-                [f"descent duration {w.duration:.2f}s outside "
-                 f"[{p['descent_min_s']}, {p['descent_max_s']}]"])
 
+    ceiling = p.get("posture_model") == "ceiling"
     pre = [f for f in frames if f.t_s < w.onset]
-    phases["pre_posture"] = _phase_from_postures(pre, p, "upright")
-    if phases["pre_posture"].satisfied is False:
-        return RulesVerdict("negative", track.track_id, w.source, phases,
-                            ["not upright before the descent"])
     post = [f for f in frames if f.t_s > w.offset]
-    phases["post_posture"] = _phase_from_postures(post, p, "horizontal")
-    if phases["post_posture"].satisfied is False:
-        return RulesVerdict("negative", track.track_id, w.source, phases,
-                            ["not horizontal after the descent"])
+    if ceiling:
+        # Ceiling model: before the descent there is
+        # usually nobody in frame to classify (enter-and-fall), and
+        # image tilt does not encode body orientation from above.
+        # The pre phase is unobservable by construction; the post
+        # phase is the presence of a PERSON-SIZED mask — a frame
+        # count alone would let the known pocket-sized ceiling
+        # fixture author "person present" evidence. The verdict in
+        # this view therefore caps at uncertain by design.
+        phases["pre_posture"] = PhaseEvidence(None, {
+            "note": "unobservable by construction in the ceiling view"})
+        floor_px = p["min_person_area_frac"] * frame_w * frame_h
+        sized = [f for f in post if f.area_px >= floor_px]
+        if len(post) < p["min_phase_frames"]:
+            phases["post_posture"] = PhaseEvidence(None, {
+                "note": "too few keyframes after the descent"})
+        elif not sized:
+            phases["post_posture"] = PhaseEvidence(False, {
+                "note": "no person-sized mask after the descent",
+                "areas_px": [f.area_px for f in post],
+                "floor_px": round(floor_px)})
+        elif len(sized) * 2 >= len(post):
+            phases["post_posture"] = PhaseEvidence(True, {
+                "note": "person-sized mask present after the descent",
+                "elongations": [f.elongation for f in post],
+                "areas_px": [f.area_px for f in post]})
+        else:
+            phases["post_posture"] = PhaseEvidence(None, {
+                "note": "person-sized mask in a minority of "
+                        "post-descent keyframes",
+                "areas_px": [f.area_px for f in post],
+                "floor_px": round(floor_px)})
+    else:
+        phases["pre_posture"] = _phase_from_postures(pre, p, "upright")
+        phases["post_posture"] = _phase_from_postures(post, p, "horizontal")
 
     still = stillness(track, frame_w, frame_h, after_s=w.offset,
                       anchor="start")
@@ -192,11 +215,36 @@ def _evaluate_window(track: Track, w: _Window, frame_w: int,
         phases["stillness"] = PhaseEvidence(
             still <= p["stillness_max_disp_h"],
             {"displacement_h": round(still, 4)})
-        if still > p["stillness_max_disp_h"]:
-            return RulesVerdict("negative", track.track_id, w.source,
-                                phases, ["person moved after the descent"])
 
-    unknown = [name for name, ph in phases.items() if ph.satisfied is None]
+    # Composition. A measured descent outside the window is evidence,
+    # not a veto (P3 safeguard): it produces a confident
+    # negative only alongside a contradiction in another phase. When
+    # everything else is fall-consistent, the case escalates.
+    def _reason(name: str) -> str:
+        if ceiling and name == "post_posture":
+            return "no person-sized mask after the descent"
+        return {
+            "pre_posture": "not upright before the descent",
+            "post_posture": "not horizontal after the descent",
+            "stillness": "person moved after the descent",
+        }[name]
+
+    contradictions = [n for n in ("pre_posture", "post_posture", "stillness")
+                      if phases[n].satisfied is False]
+    if phases["descent"].satisfied is False:
+        dur = (f"descent duration {w.duration:.2f}s outside "
+               f"[{p['descent_min_s']}, {p['descent_max_s']}]")
+        if contradictions:
+            return RulesVerdict("negative", track.track_id, w.source,
+                                phases, [dur, _reason(contradictions[0])])
+        return RulesVerdict(
+            "uncertain", track.track_id, w.source, phases,
+            [dur + "; remaining evidence is fall-consistent or "
+                   "unmeasured"])
+    if contradictions:
+        return RulesVerdict("negative", track.track_id, w.source, phases,
+                            [_reason(contradictions[0])])
+    unknown = [n for n, ph in phases.items() if ph.satisfied is None]
     if unknown:
         return RulesVerdict(
             "uncertain", track.track_id, w.source, phases,
@@ -213,6 +261,36 @@ def _evaluate_track_no_descent(track: Track, p: dict) -> RulesVerdict:
     transition at all is contradictory evidence: negative.
     """
     frames = track.frames
+    if p.get("posture_model") == "ceiling":
+        # Enter-and-fall with the burst itself missed: an elongated,
+        # person-sized person present in the track's later part is
+        # the same missing-evidence shape in this view's terms. The
+        # size test matters: the pocket-sized ceiling fixture is a
+        # thin sliver (elongation ~3.4) and would otherwise author
+        # this escalation on its own.
+        floor_px = (p["min_person_area_frac"] * track.frame_w
+                    * track.frame_h)
+        later = frames[len(frames) // 2:]
+        qualifying = [f for f in later
+                      if f.elongation is not None
+                      and f.elongation >= p["min_elongation"]
+                      and f.area_px >= floor_px]
+        if len(qualifying) >= p["min_phase_frames"]:
+            return RulesVerdict(
+                "uncertain", track.track_id, None,
+                {"descent": PhaseEvidence(
+                    None, {"note": "no descent interval observed"}),
+                 "post_posture": PhaseEvidence(
+                     True, {"note": "elongated person-sized mask "
+                                    "present later in the track"})},
+                ["elongated person present with the descent itself "
+                 "unobserved"])
+        return RulesVerdict(
+            "negative", track.track_id, None,
+            {"descent": PhaseEvidence(
+                False, {"note": "no descent and no elongated "
+                                 "person-sized mask in the later track"})},
+            ["no descent evidence and no elongated person-sized mask"])
     postures = [_posture(f, p) for f in frames]
     need = p["min_phase_frames"]
     for k in range(1, len(frames)):
@@ -231,6 +309,19 @@ def _evaluate_track_no_descent(track: Track, p: dict) -> RulesVerdict:
                 "uncertain", track.track_id, None, phases,
                 ["upright-to-horizontal transition with the descent "
                  "itself unobserved"])
+    classified = [x for x in postures if x != "abstain"]
+    if len(classified) < need:
+        # Posture itself is unmeasurable on this track (axes
+        # undefined, masks too round): with the descent also
+        # unobserved, nothing here is contradictory evidence.
+        return RulesVerdict(
+            "uncertain", track.track_id, None,
+            {"descent": PhaseEvidence(
+                None, {"note": "no descent observed and posture "
+                                "unmeasurable on this track"}),
+             "transition": PhaseEvidence(
+                 None, {"postures": postures})},
+            ["descent unobserved and posture unmeasurable"])
     return RulesVerdict(
         "negative", track.track_id, None,
         {"descent": PhaseEvidence(
@@ -261,8 +352,14 @@ def _evaluate_track(track: Track, timing: TimingResult | None,
         return _evaluate_track_no_descent(track, p)
     verdicts = [_evaluate_window(track, w, frame_w, frame_h, p)
                 for w in windows]
-    best = min(verdicts,
-               key=lambda v: (_ORDER[v.label], -_progress(v)))
+
+    def _window_rank(v: RulesVerdict):
+        d = v.phases.get("descent")
+        slack = bool(d and d.detail.get("admitted_on_slack"))
+        return (_ORDER[v.label], slack,
+                0 if v.timing_source == "local" else 1, -_progress(v))
+
+    best = min(verdicts, key=_window_rank)
     for v in verdicts:
         if v is best:
             continue
@@ -281,8 +378,15 @@ def _evaluate_track(track: Track, timing: TimingResult | None,
 
 def _evaluate(tracks: list[Track], frame_w: int, frame_h: int,
               timing: TimingResult | None = None,
-              params: dict | None = None) -> RulesVerdict:
+              params: dict | None = None,
+              view: str = "side") -> RulesVerdict:
+    if view not in VIEWS:
+        raise ValueError(f"unknown view: {view!r}")
     p = dict(RULES)
+    p.update(VIEWS[view])
+    from .config import FEATURES
+    p.setdefault("min_person_area_frac",
+                 FEATURES["min_person_area_frac"])
     if params:
         p.update(params)
     usable = [t for t in tracks if len(t.frames) >= p["min_track_frames"]]
@@ -291,8 +395,17 @@ def _evaluate(tracks: list[Track], frame_w: int, frame_h: int,
                             reasons=["no track with enough keyframes"])
     verdicts = [_evaluate_track(t, timing, frame_w, frame_h, p)
                 for t in usable]
+    # Rank by label, then phase progress, then evidence mass: when
+    # two tracks reach the same verdict, the one carrying more mask
+    # area is the person-sized evidence. Without the area term a
+    # persistent pocket-sized false positive (a ceiling fixture SAM
+    # returns in every keyframe) wins ties over the actual person
+    # purely by track order, and downstream stages inherit the wrong
+    # track's record.
+    area = {t.track_id: sum(f.area_px for f in t.frames) for t in usable}
     best = min(verdicts,
-               key=lambda v: (_ORDER[v.label], -_progress(v)))
+               key=lambda v: (_ORDER[v.label], -_progress(v),
+                              -area.get(v.track_id, 0)))
     for v in verdicts:
         if v is best:
             continue
@@ -309,13 +422,17 @@ def _evaluate(tracks: list[Track], frame_w: int, frame_h: int,
 
 def evaluate(tracks: list[Track], frame_w: int, frame_h: int,
              timing: TimingResult | None = None,
-             params: dict | None = None) -> RulesVerdict:
+             params: dict | None = None,
+             view: str = "side") -> RulesVerdict:
     """Evaluate the rules state machine (see _evaluate).
 
     Every verdict is stamped with the current config hash, so a result
     record can always be tied to the parameter set that produced it.
+    The params argument is a development facility: verdicts produced
+    with overrides carry the base config hash and must not be scored.
     """
     from .config import config_hash
-    v = _evaluate(tracks, frame_w, frame_h, timing=timing, params=params)
+    v = _evaluate(tracks, frame_w, frame_h, timing=timing, params=params,
+                  view=view)
     v.config_hash = config_hash()
     return v

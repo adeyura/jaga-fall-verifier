@@ -43,6 +43,7 @@ def main() -> int:
             "dataset": "ur_fall",
             "sequence": seq,
             "camera": cam,
+            "view": "ceiling" if cam == "cam1" else "side",
             "label": label,
             "negative_category": "",
             "split": "",

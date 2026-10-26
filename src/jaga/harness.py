@@ -44,7 +44,13 @@ def run_clip(video: Path, row: dict, runner: SamRunner, cache_root: Path,
     clip_id = row["clip_id"]
     rec: dict = {"clip_id": clip_id, "label": row["label"],
                  "camera": row.get("camera", ""),
+                 "view": row.get("view", "side"),
                  "config_hash": config_hash(), "segments": []}
+    if "view" not in row:
+        # A missing view column must never silently evaluate a
+        # ceiling clip under the side model (the original shakedown
+        # failure). The default is recorded loudly in the clip record.
+        rec["view_defaulted"] = True
     t0 = time.monotonic()
     duration = probe_duration(video)
     rec["duration_s"] = round(duration, 2)
@@ -91,7 +97,8 @@ def run_clip(video: Path, row: dict, runner: SamRunner, cache_root: Path,
             rec["wall_s"] = round(time.monotonic() - t0, 2)
             return rec
         verdict = rules_mod.evaluate(run.tracks, run.frame_w,
-                                     run.frame_h, timing=timing)
+                                     run.frame_h, timing=timing,
+                                     view=rec["view"])
         seg_rec["run"] = run.to_dict()
         seg_rec["rules_label"] = verdict.label
         seg_rec["rules_reasons"] = verdict.reasons
@@ -102,10 +109,14 @@ def run_clip(video: Path, row: dict, runner: SamRunner, cache_root: Path,
         labels.append(verdict.label)
         if (transport is not None
                 and verdict.label in adjudicate_labels):
-            images = image_picker(window) if image_picker else []
+            images, img_labels = ([], [])
+            if image_picker:
+                images, img_labels = image_picker(window)
             adj: Verdict = adjudicate(
-                transport, traces_text(clip_id, run, timing, verdict),
-                images)
+                transport,
+                traces_text(clip_id, run, timing, verdict,
+                            view=rec["view"]),
+                images, image_labels=img_labels)
             seg_rec["adjudication"] = {
                 "usable": adj.usable, "verdict": adj.verdict,
                 "confidence": adj.confidence, "error": adj.error,
