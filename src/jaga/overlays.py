@@ -3,9 +3,13 @@ aggressively blurred, low-resolution background.
 
 The adjudicator's scored evidence form never carries raw frames.
 This module renders, for one keyframe, a PNG in which the person's
-mask is a solid tint over a background that has been downscaled,
-blurred, and upscaled back — enough scene geometry to judge a
-posture claim, not enough detail to identify anyone or anything.
+mask is a solid tint over a background that has been downscaled by
+at least the configured factor (config.EVIDENCE, under the config
+hash), box-blurred, and upscaled back — enough scene geometry to
+judge a posture claim, not enough detail to identify anyone or
+anything. The downscale guarantee holds at every frame width: the
+target width is the smaller of the configured maximum and
+width // min_downscale.
 
 Pure functions over numpy arrays plus an ffmpeg-backed PNG reader
 (the project has no image library; ffmpeg is already the frame
@@ -21,13 +25,10 @@ import zlib
 
 import numpy as np
 
-# Background treatment (frozen with the evidence form): shrink to
-# this width, box-blur, then upscale back to the frame size.
-BG_WIDTH = 80
-BG_BLUR_PASSES = 2
-# Person tint (RGB) and opacity over the blurred background.
-TINT = (255, 64, 32)
-TINT_ALPHA = 0.55
+from .config import EVIDENCE
+
+# Background treatment and person tint live in config.EVIDENCE
+# (frozen with the spec, under the config hash) — see config.py.
 
 
 def read_png_rgb(path) -> np.ndarray:
@@ -71,23 +72,28 @@ def _box_blur(img: np.ndarray, radius: int = 2) -> np.ndarray:
     return x
 
 
-def blur_background(frame: np.ndarray, bg_width: int = BG_WIDTH,
-                    passes: int = BG_BLUR_PASSES) -> np.ndarray:
-    """Downscale to bg_width, blur, upscale back to the frame size.
+def blur_background(frame: np.ndarray, bg_width: int | None = None,
+                    passes: int | None = None) -> np.ndarray:
+    """Downscale (guaranteed factor), blur, upscale back to frame size.
 
     Nearest-neighbour resampling both ways: the blockiness is part of
     the privacy treatment, not an artifact to hide.
     """
+    if bg_width is None:
+        bg_width = EVIDENCE["bg_width"]
+    if passes is None:
+        passes = EVIDENCE["bg_blur_passes"]
     h, w = frame.shape[:2]
-    if w <= bg_width:
+    target = max(8, min(bg_width, w // EVIDENCE["bg_min_downscale"]))
+    if w <= target:
         small = frame.astype(np.float32)
     else:
-        bh = max(1, round(h * bg_width / w))
+        bh = max(1, round(h * target / w))
         yi = (np.linspace(0, h - 1, bh)).round().astype(int)
-        xi = (np.linspace(0, w - 1, bg_width)).round().astype(int)
+        xi = (np.linspace(0, w - 1, target)).round().astype(int)
         small = frame[yi][:, xi].astype(np.float32)
     for _ in range(passes):
-        small = _box_blur(small, radius=2)
+        small = _box_blur(small, radius=EVIDENCE["bg_blur_radius"])
     yi = (np.linspace(0, small.shape[0] - 1, h)).round().astype(int)
     xi = (np.linspace(0, small.shape[1] - 1, w)).round().astype(int)
     return np.clip(small[yi][:, xi], 0, 255).astype(np.uint8)
@@ -103,7 +109,8 @@ def render_overlay(frame: np.ndarray,
     """
     h, w = frame.shape[:2]
     out = blur_background(frame).astype(np.float32)
-    tint = np.array(TINT, dtype=np.float32)
+    tint = np.array(EVIDENCE["tint"], dtype=np.float32)
+    alpha = EVIDENCE["tint_alpha"]
     for raster, (left, top) in masks:
         mh, mw = raster.shape
         if left < 0 or top < 0 or left + mw > w or top + mh > h:
@@ -113,12 +120,18 @@ def render_overlay(frame: np.ndarray,
         region = out[top:top + mh, left:left + mw]
         m = raster.astype(bool)[..., None]
         out[top:top + mh, left:left + mw] = np.where(
-            m, region * (1 - TINT_ALPHA) + tint * TINT_ALPHA, region)
+            m, region * (1 - alpha) + tint * alpha, region)
     return np.clip(out, 0, 255).astype(np.uint8)
 
 
 def encode_png(rgb: np.ndarray) -> bytes:
     """Minimal PNG encoder for an (H, W, 3) uint8 array."""
+    if (not isinstance(rgb, np.ndarray) or rgb.dtype != np.uint8
+            or rgb.ndim != 3 or rgb.shape[2] != 3):
+        raise ValueError(
+            "encode_png needs a uint8 (H, W, 3) array, got "
+            f"{getattr(rgb, 'dtype', type(rgb))} "
+            f"{getattr(rgb, 'shape', None)}")
     h, w = rgb.shape[:2]
     rows = b"".join(b"\x00" + rgb[y].tobytes() for y in range(h))
 

@@ -65,6 +65,11 @@ class Verdict:
 def build_body(traces_text: str, image_data_urls: list[str],
                model: str = DEFAULT_MODEL, max_tokens: int = 6000,
                image_labels: list[str] | None = None) -> dict:
+    if image_labels is not None and len(image_labels) != len(image_data_urls):
+        raise ValueError(
+            f"{len(image_labels)} image labels for "
+            f"{len(image_data_urls)} images; mislabeled evidence is "
+            "worse than unlabeled evidence")
     content: list[dict] = [{"type": "text", "text": traces_text}]
     for i, url in enumerate(image_data_urls):
         if image_labels and i < len(image_labels) and image_labels[i]:

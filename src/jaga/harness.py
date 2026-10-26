@@ -45,7 +45,8 @@ def overlay_picker(window, run):
     import base64
 
     by_t = {round(k.t_s, 3): k for k in run.keyframes}
-    chosen = [window[0], window[len(window) // 2], window[-1]]
+    idx = sorted({0, len(window) // 2, len(window) - 1})
+    chosen = [window[i] for i in idx]
     urls, labels = [], []
     for t_s, path in chosen:
         kf = by_t.get(round(t_s, 3))
@@ -58,7 +59,14 @@ def overlay_picker(window, run):
                     "overlay picker needs mask rasters; construct the "
                     "runner with keep_rasters=True")
             masks.append((inst.raster, (inst.box[0], inst.box[1])))
-        img = render_overlay(read_png_rgb(path), masks)
+        frame = read_png_rgb(path)
+        if frame.shape[:2] != (run.frame_h, run.frame_w):
+            raise ValueError(
+                f"keyframe at {t_s}s decodes to {frame.shape[1]}x"
+                f"{frame.shape[0]} but the run geometry is "
+                f"{run.frame_w}x{run.frame_h}; refusing to composite "
+                "one clip's masks over another geometry")
+        img = render_overlay(frame, masks)
         urls.append("data:image/png;base64,"
                     + base64.b64encode(encode_png(img)).decode())
         labels.append(f"Keyframe at {t_s:.1f} s (mask overlay over a "
@@ -76,12 +84,24 @@ def run_clip(video: Path, row: dict, runner: SamRunner, cache_root: Path,
              keyframe_fps: float = 2.0,
              adjudicate_labels: frozenset[str] = frozenset(),
              transport: Callable | None = None,
-             image_picker: Callable | None = None) -> dict:
+             image_picker: Callable | None = None,
+             evidence_form: str = "none") -> dict:
+    # The evidence form is part of the result record (SPEC D3): every
+    # adjudication states which form it judged and how many images it
+    # saw, so an artifact can prove which evidence produced it. The
+    # picker and the declared form must agree.
+    if image_picker is not None and evidence_form == "none":
+        raise ValueError("an image picker with evidence_form='none' "
+                         "is a contradiction; name the form")
+    if image_picker is None and evidence_form != "none":
+        raise ValueError(f"evidence_form={evidence_form!r} declared "
+                         "but no image picker was given")
     clip_id = row["clip_id"]
     rec: dict = {"clip_id": clip_id, "label": row["label"],
                  "camera": row.get("camera", ""),
                  "view": row.get("view", "side"),
-                 "config_hash": config_hash(), "segments": []}
+                 "config_hash": config_hash(),
+                 "evidence_form": evidence_form, "segments": []}
     if "view" not in row:
         # A missing view column must never silently evaluate a
         # ceiling clip under the side model (the original shakedown
@@ -164,6 +184,8 @@ def run_clip(video: Path, row: dict, runner: SamRunner, cache_root: Path,
                             view=rec["view"]),
                 images, image_labels=img_labels)
             seg_rec["adjudication"] = {
+                "evidence_form": evidence_form,
+                "images": len(images),
                 "usable": adj.usable, "verdict": adj.verdict,
                 "confidence": adj.confidence, "error": adj.error,
                 "discriminator": adj.discriminator,

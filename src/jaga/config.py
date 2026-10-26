@@ -98,8 +98,22 @@ VIEWS = {
 }
 
 
+# Adjudicator evidence form (SPEC D3). The overlay treatment is part
+# of the frozen evidence the adjudicator is scored on: weakening the
+# blur must change the hash and therefore the record.
+EVIDENCE = {
+    "bg_width": 80,          # background downscale target (max px)
+    "bg_min_downscale": 4,   # guaranteed minimum reduction factor
+    "bg_blur_passes": 2,
+    "bg_blur_radius": 2,
+    "tint": (255, 64, 32),
+    "tint_alpha": 0.55,
+}
+
+
 def config_hash() -> str:
     blob = json.dumps({"gate": GATE, "features": FEATURES, "timing": TIMING,
-                       "rules": RULES, "views": VIEWS},
-                      sort_keys=True).encode()
+                       "rules": RULES, "views": VIEWS,
+                       "evidence": EVIDENCE},
+                      sort_keys=True, default=list).encode()
     return hashlib.sha256(blob).hexdigest()[:16]

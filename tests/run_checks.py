@@ -483,13 +483,14 @@ def _():
         return {"choices": [{"message": {"content": GOOD}}], "usage": {}}
 
     def picker(window, run):
-        return [], ["Keyframe at 0.0 s:"]
+        return ["data:image/png;base64,AAAA"], ["Keyframe at 0.0 s:"]
 
     rec = run_clip(root / row["video_path"], row, StubRunner(),
                    root / "cache",
                    adjudicate_labels=frozenset(
                        {"uncertain", "negative", "fall_candidate"}),
-                   transport=fake_transport, image_picker=picker)
+                   transport=fake_transport, image_picker=picker,
+                   evidence_form="raw")
     from jaga.harness import _merge_labels
     expected = _merge_labels([s["rules_label"] for s in rec["segments"]])
     assert rec["outcome"] == expected, (rec["outcome"], expected)
@@ -603,7 +604,11 @@ if FIXTURE:
             return
         raise AssertionError("boxless mask accepted")
 else:
-    skip("parse: fixture checks", "no SAM stream fixture found")
+    if os.environ.get("JAGA_STRICT") != "1":
+        # Informational only outside strict mode: the committed
+        # synthetic fixture carries the parse protections, so a
+        # missing dataset fixture must not fail a strict run.
+        skip("parse: fixture checks", "no SAM stream fixture found")
 
 
 # ------------------------------------------------------- runner
@@ -672,6 +677,17 @@ def _():
     assert out.shape == frame.shape and out.dtype == _np.uint8
     bg = blur_background(frame)
     assert bg.shape == frame.shape
+    # Blur strength, measured with a bright disc probe: a 20-px feature
+    # at dataset width and a 16-px feature
+    # in a narrow 64-px frame must both lose most of their peak —
+    # the narrow case is what the guaranteed downscale protects.
+    def disc_peak(wdt, hgt, r):
+        yy, xx = _np.mgrid[0:hgt, 0:wdt]
+        img = _np.zeros((hgt, wdt, 3), dtype=_np.uint8)
+        img[((xx - wdt // 2) ** 2 + (yy - hgt // 2) ** 2) <= r * r] = 255
+        return int(blur_background(img).max())
+    assert disc_peak(320, 240, 10) < 150, disc_peak(320, 240, 10)
+    assert disc_peak(64, 48, 8) < 150, disc_peak(64, 48, 8)
     inside = out[30, 34].astype(int)   # inside the mask
     under = bg[30, 34].astype(int)     # the blurred background there
     outside = out[30, 5].astype(int)   # blurred background only
@@ -709,39 +725,84 @@ def _():
 
 @check("parse: rasters retained only on request, and they add up")
 def _():
+    import numpy as _np
     insts, _ = parse_sam_stream(SYNTH_STREAM, keep_raster=True)
     assert insts and all(i.raster is not None for i in insts)
     for i in insts:
         assert i.raster.shape == (i.mask_height, i.mask_width)
         assert int(i.raster.sum()) == i.mask_area_px
+    i = insts[0]
+    ys, xs = _np.nonzero(i.raster)
+    # the retained raster is the same raster the features came from:
+    # no flip, no transpose (equal shape and sum would hide both)
+    assert abs(float(xs.mean()) + 0.5 - i.centroid_xy[0]) < 1e-9
+    assert abs(float(ys.mean()) + 0.5 - i.centroid_xy[1]) < 1e-9
+    assert int(ys.max()) == i.bottom_y
     plain, _ = parse_sam_stream(SYNTH_STREAM)
     assert all(i.raster is None for i in plain)
 
 
 @check("harness: overlay picker renders overlays and demands rasters")
 def _():
+    import base64 as _b64
     import numpy as _np
     from jaga.harness import overlay_picker
+    from jaga.overlays import encode_png as _enc, read_png_rgb
     from jaga.sam_runner import ClipRun, KeyframeResult
     from jaga.sam_parse import Instance
-    from jaga.overlays import encode_png as _enc
-    frame = ROOT / "tests" / "fixtures" / "overlay_frame.png"
-    frame.write_bytes(_enc(_np.full((64, 64, 3), 120, dtype=_np.uint8)))
-    raster = _np.zeros((50, 20), dtype=bool)
-    raster[5:45, 3:17] = True
-    inst = Instance(object_id="0", box=(10, 10, 30, 60),
-                    mask_area_px=int(raster.sum()), mask_width=20,
-                    mask_height=50, centroid_xy=(10.0, 25.0),
-                    bottom_y=49, bottom_band_share=0.1,
-                    elongation=2.0, axis_tilt_deg=80.0, raster=raster)
-    kf = KeyframeResult(t_s=0.0, instances=[inst], parse_stats={},
-                        from_cache=True, images_billed=0)
-    run = ClipRun(clip_id="x", keyframes=[kf], frame_w=64, frame_h=64)
-    window = [(0.0, frame), (0.0, frame), (0.0, frame)]
+
+    def make_frame(path, gray, mask_box):
+        frame = _np.full((64, 64, 3), gray, dtype=_np.uint8)
+        path.write_bytes(_enc(frame))
+        raster = _np.zeros((mask_box[3] - mask_box[1],
+                            mask_box[2] - mask_box[0]), dtype=bool)
+        raster[2:-2, 2:-2] = True
+        inst = Instance(object_id="0", box=mask_box,
+                        mask_area_px=int(raster.sum()),
+                        mask_width=raster.shape[1],
+                        mask_height=raster.shape[0],
+                        centroid_xy=(raster.shape[1] / 2,
+                                     raster.shape[0] / 2),
+                        bottom_y=raster.shape[0] - 3,
+                        bottom_band_share=0.1, elongation=2.0,
+                        axis_tilt_deg=80.0, raster=raster)
+        return inst
+
+    d = ROOT / "tests" / "fixtures"
+    specs = [(0.0, 90, (4, 10, 20, 50)), (0.5, 130, (24, 10, 40, 50)),
+             (1.0, 170, (44, 10, 60, 50))]
+    window, kfs = [], []
+    for t_s, gray, box in specs:
+        pth = d / f"picker_frame_{int(t_s * 10)}.png"
+        inst = make_frame(pth, gray, box)
+        window.append((t_s, pth))
+        kfs.append(KeyframeResult(t_s=t_s, instances=[inst],
+                                  parse_stats={}, from_cache=True,
+                                  images_billed=0))
+    run = ClipRun(clip_id="x", keyframes=kfs, frame_w=64, frame_h=64)
     urls, labels = overlay_picker(window, run)
-    assert len(urls) == 3 and urls[0].startswith("data:image/png;base64,")
-    assert "overlay" in labels[0]
-    inst.raster = None
+    assert len(urls) == 3 and "overlay" in labels[0]
+    # decode the middle pick: the tint must sit at the MIDDLE
+    # keyframe's mask (x 24-40), not the first keyframe's (x 4-20)
+    mid_path = d / "picker_out_mid.png"
+    mid_path.write_bytes(_b64.b64decode(urls[1].split(",", 1)[1]))
+    mid = read_png_rgb(mid_path).astype(int)
+    in_mask = mid[30, 32]     # inside the middle mask
+    in_first = mid[30, 12]    # where the FIRST mask would be
+    assert in_mask[0] - in_mask[1] > 40, in_mask
+    assert abs(in_first[0] - in_first[1]) < 25, in_first
+    # an empty keyframe renders as pure blurred background (no tint)
+    empty = KeyframeResult(t_s=0.5, instances=[], parse_stats={},
+                           from_cache=True, images_billed=0)
+    run2 = ClipRun(clip_id="x", keyframes=[kfs[0], empty, kfs[2]],
+                   frame_w=64, frame_h=64)
+    urls2, _ = overlay_picker(window, run2)
+    p2 = d / "picker_out_empty.png"
+    p2.write_bytes(_b64.b64decode(urls2[1].split(",", 1)[1]))
+    arr2 = read_png_rgb(p2).astype(int)
+    assert int(_np.abs(arr2[..., 0] - arr2[..., 1]).max()) < 25
+    # and a missing raster is a loud failure, never a raw frame
+    kfs[1].instances[0].raster = None
     try:
         overlay_picker(window, run)
     except ValueError:
@@ -750,7 +811,6 @@ def _():
         raise AssertionError("missing raster did not raise")
 
 
-# --------------------------------------- parse (synthetic fixture)
 @check("parse: synthetic stream yields the recorded instance")
 def _():
     insts, stats = parse_sam_stream(SYNTH_STREAM)

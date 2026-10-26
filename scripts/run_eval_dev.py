@@ -80,14 +80,17 @@ def main() -> None:
                  else ROOT / "data" / "ur_fall" / row["source_file"])
         rec = run_clip(video, row, runner, cache_root,
                        adjudicate_labels=ADJUDICATE_ON,
-                       transport=vm_transport, image_picker=PICKERS[evidence])
+                       transport=vm_transport,
+                       image_picker=PICKERS[evidence],
+                       evidence_form=evidence)
         records.append(rec)
         print(f"{TAG}: {rec['clip_id']} ({rec['label']}) -> "
               f"{rec['outcome']} in {rec['wall_s']}s")
     out_dir = cache_root / "runs"
     out_dir.mkdir(parents=True, exist_ok=True)
     (out_dir / "dev_eval.json").write_text(json.dumps(
-        {"dev": True, "records": records, "cascade": cascade(records)},
+        {"dev": True, "evidence_form": evidence,
+         "records": records, "cascade": cascade(records)},
         indent=2))
     print(f"{TAG}: cascade: {json.dumps(cascade(records), indent=2)}")
 
