@@ -993,45 +993,94 @@ def _():
 
 
 # ------------------------------------------------------- alerts (D2)
-@check("alerts: disposition mapping escalates uncertainty, never silence")
+@check("alerts: the full disposition table (D1 semantics, monotonic)")
 def _():
-    from jaga.alerts import Disposition, tier_for, TIER_CHECK,         TIER_NONE, TIER_URGENT
-    assert tier_for(Disposition("c", "uncertain",
-                                "fall", True))[0] == TIER_URGENT
-    assert tier_for(Disposition("c", "fall_candidate"))[0] == TIER_URGENT
-    assert tier_for(Disposition("c", "uncertain",
-                                "benign", True))[0] == TIER_NONE
-    assert tier_for(Disposition("c", "uncertain",
-                                "uncertain", True))[0] == TIER_CHECK
-    assert tier_for(Disposition("c", "uncertain",
-                                None, False))[0] == TIER_CHECK
-    assert tier_for(Disposition("c", "negative"))[0] == TIER_NONE
-    t, reason = tier_for(Disposition("c", "uncertain",
+    from jaga.alerts import Disposition, tier_for, TIER_CHECK, \
+        TIER_NONE, TIER_URGENT
+    A = dict(adjudicator_verdict=None, adjudicator_usable=False)
+    F = dict(adjudicator_verdict="fall", adjudicator_usable=True)
+    B = dict(adjudicator_verdict="benign", adjudicator_usable=True)
+    U = dict(adjudicator_verdict="uncertain", adjudicator_usable=True)
+    X = dict(adjudicator_verdict="fall", adjudicator_usable=False)
+    U_, C, N = TIER_URGENT, TIER_CHECK, TIER_NONE
+    table = {
+        "fall_candidate": {**{"A": U_, "F": U_, "B": N, "U": U_, "X": U_}},
+        "uncertain":      {**{"A": C, "F": U_, "B": N, "U": C, "X": C}},
+        "negative":       {**{"A": N, "F": U_, "B": N, "U": C, "X": N}},
+        "no_evidence":    {**{"A": C, "F": U_, "B": N, "U": C, "X": C}},
+        "mystery_label":  {**{"A": C, "F": U_, "B": N, "U": C, "X": C}},
+    }
+    states = {"A": A, "F": F, "B": B, "U": U, "X": X}
+    for rules_label, row in table.items():
+        for state, want in row.items():
+            got = tier_for(Disposition("c", rules_label,
+                                       **states[state]))[0]
+            assert got == want, (rules_label, state, got, want)
+    # failure signals raise the floor to CHECK, never lower a tier
+    assert tier_for(Disposition("c", "fall_candidate",
+                                pipeline_error="x"))[0] == U_
+    assert tier_for(Disposition("c", "negative", "fall", True,
+                                pipeline_error="x"))[0] == U_
+    t, reason = tier_for(Disposition("c", "negative",
                                      pipeline_error="SAM down"))
-    assert t == TIER_CHECK and "fail-safe" in reason
+    assert t == C and "fail-safe" in reason
+    assert tier_for(Disposition("c", "negative",
+                                verification_failed=True))[0] == C
+    assert tier_for(Disposition("c", "negative",
+                                "benign", True,
+                                verification_failed=True))[0] == C
 
 
-@check("alerts: acknowledgement stops escalation; silence escalates")
+@check("alerts: ack stops escalation; silence walks the whole ladder")
 def _():
     from jaga.alerts import AlertLadder, Disposition
     now = [1000.0]
-    ladder = AlertLadder(["nearby", "family"], ack_window_s=900.0,
-                         clock=lambda: now[0])
+    ladder = AlertLadder(["nearby", "family", "service"],
+                         ack_window_s=900.0, clock=lambda: now[0])
     a = ladder.dispatch(Disposition("clip1", "uncertain", "fall", True))
-    assert a is not None and a.events[-1]["to"] == "nearby"
     b = ladder.dispatch(Disposition("clip2", "uncertain"))
+    # duplicate dispatch of a live clip returns the same alert
+    again = ladder.dispatch(Disposition("clip1", "uncertain"))
+    assert again is a and a.events[-1]["kind"] == "duplicate_dispatch"
     now[0] += 901.0
     esc = ladder.tick()
     assert {x.alert_id for x in esc} == {a.alert_id, b.alert_id}
-    assert a.events[-1]["kind"] == "escalated"
     assert a.events[-1]["to"] == "family"
     ladder.acknowledge(a.alert_id, "family")
-    now[0] += 5000.0
+    # multi-hop timing is from the LAST event, not from creation:
+    # 899 s after the escalation nothing happens, at 900 s it hops
+    now[0] += 899.0
+    assert ladder.tick() == []
+    now[0] += 1.0
     esc2 = ladder.tick()
     assert {x.alert_id for x in esc2} == {b.alert_id}
+    assert b.events[-1]["to"] == "service"
+    # final hop: exhaustion is a state, not a "someone notified" return
+    now[0] += 901.0
+    assert ladder.tick() == []
     assert b.state == "exhausted"
+    # a late ack is recorded, not a crash
+    ladder.acknowledge(b.alert_id, "service")
+    assert b.state == "acknowledged"
+    assert b.events[-1]["kind"] == "late_acknowledged"
+    # an ack from a non-recipient and an unknown id are clean errors
+    for bad_call in (lambda: ladder.acknowledge("nope", "family"),
+                     lambda: ladder.acknowledge(a.alert_id, "stranger")):
+        try:
+            bad_call()
+        except ValueError:
+            pass
+        else:
+            raise AssertionError("invalid acknowledgement accepted")
     none_alert = ladder.dispatch(Disposition("clip3", "negative"))
     assert none_alert is None and ladder.log[-1]["clip_id"] == "clip3"
+    # the ladder state round-trips
+    import json as _json
+    restored = AlertLadder.from_dict(
+        _json.loads(_json.dumps(ladder.to_dict())),
+        clock=lambda: now[0])
+    assert restored.get(a.alert_id).state == "acknowledged"
+    assert restored.recipients == ["nearby", "family", "service"]
 
 
 @check("alerts: the consent layer is a labeled mock, not wired in")
