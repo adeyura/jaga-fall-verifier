@@ -35,8 +35,18 @@ FEATURES = {
     "bottom_band_frac": 0.2,     # mask rows counted as the base band
 }
 
+TIMING = {
+    "decode_fps": 30.0,          # local series rate for descent timing
+    "smooth_s": 0.1,             # moving-average window for the series
+    "area_diff_threshold": 10.0, # gray levels: a pixel counts as changed
+    "burst_high_frac": 0.5,      # burst peak, fraction of floor-to-p95 span
+    "burst_low_frac": 0.2,       # hysteresis floor, same span
+    "min_duration_s": 0.15,
+    "max_duration_s": 3.0,
+}
+
 
 def config_hash() -> str:
-    blob = json.dumps({"gate": GATE, "features": FEATURES},
+    blob = json.dumps({"gate": GATE, "features": FEATURES, "timing": TIMING},
                       sort_keys=True).encode()
     return hashlib.sha256(blob).hexdigest()[:16]
