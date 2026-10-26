@@ -108,3 +108,30 @@ request denser frames or a second, wider SAM look before deciding).
   in lab rooms; dataset performance is not deployment performance.
 - No deployment claim. No medical framing. The system is a verifier and a
   response workflow, never a medical device.
+
+## Freeze agenda (builder notes, 2026-10-27 — for the author's freeze pass)
+
+Items the implementation surfaced that the freeze must settle in the
+spec text itself, so the frozen document and the code say the same
+thing:
+- Keyframe rate: the pipeline text above says SAM at 3-5 fps; the
+  costed runner design uses 2 fps (about $0.04 per candidate window).
+  Freeze one number.
+- Descent timing source: dense local timing (timing.py) is built and
+  the keyframe path is a labeled fallback. The text above still reads
+  as if descent comes from keyframe kinematics.
+- Stillness wording: the implementation requires an observed span of
+  at least 2.5 s inside the trailing 3 s window with no unobserved gap
+  over 1.0 s. Either the spec adopts that operationalization or the
+  implementation tightens to a literal 3.0 s span.
+- "Floor-contact area" is not computed. The computed measures are
+  floor_proximity (mask bottom edge over frame height) and
+  bottom_band_share (share of mask pixels in the bottom band of the
+  person's own mask). Rename in the spec or fund a frame-relative
+  floor-band measure (needs the mask row histogram retained).
+- Association is box IoU, not mask IoU; mask rasters are not retained
+  past feature extraction. Adjudicator overlays and the zoomed person
+  crop need a raster path that does not exist yet.
+- The three DECISION NEEDED sections: recommendations on all three
+  plus the dataset methodology were made on 2026-10-27; they wait
+  for the author's approval and are not reproduced in this spec.

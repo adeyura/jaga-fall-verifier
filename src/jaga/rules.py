@@ -38,7 +38,8 @@ from .timing import TimingResult
 
 
 def _posture(frame, p: dict) -> str:
-    if frame.elongation < p["min_elongation"]:
+    if (frame.elongation is None or frame.axis_tilt_deg is None
+            or frame.elongation < p["min_elongation"]):
         return "abstain"
     if frame.axis_tilt_deg >= p["upright_tilt_min_deg"]:
         return "upright"
@@ -144,7 +145,7 @@ def evaluate(tracks: list[Track], frame_w: int, frame_h: int,
                             phases, ["not horizontal after the descent"])
     if phases["post_posture"].satisfied is None:
         return RulesVerdict("uncertain", track.track_id, timing_source,
-                            phases, ["no keyframes after the descent"])
+                            phases, ["no classifiable keyframes after the descent"])
 
     # --- stillness (post-descent period only) ----------------------------
     still = stillness(track, frame_w, frame_h, after_s=offset)
@@ -180,6 +181,6 @@ def evaluate(tracks: list[Track], frame_w: int, frame_h: int,
     if phases["pre_posture"].satisfied is None:
         return RulesVerdict("uncertain", track.track_id, timing_source,
                             phases,
-                            ["no keyframes before the descent"])
+                            ["no classifiable keyframes before the descent"])
     return RulesVerdict("fall_candidate", track.track_id, timing_source,
                         phases, ["all four phases satisfied"])

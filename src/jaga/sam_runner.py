@@ -89,6 +89,27 @@ class ClipRun:
     frame_h: int = 0
 
     @property
+    def anomalies(self) -> dict:
+        """Evidence the API returned that did not become instances.
+
+        Boxes without masks, text records, and sub-threshold tiny
+        masks. In the scored path any nonzero total fails the clip
+        loudly (see SamRunner.fail_on_anomaly): a keyframe where SAM
+        saw a person but delivered no usable mask must never be
+        scored as "no person."
+        """
+        out = {"boxes_without_masks": 0, "text_records": 0,
+               "tiny_instances": 0}
+        for k in self.keyframes:
+            for key in out:
+                out[key] += k.parse_stats.get(key, 0)
+        return out
+
+    @property
+    def anomaly_total(self) -> int:
+        return sum(self.anomalies.values())
+
+    @property
     def api_calls(self) -> int:
         return sum(1 for k in self.keyframes if not k.from_cache)
 
@@ -109,8 +130,15 @@ class ClipRun:
         return sum(1 for k in self.keyframes if not k.instances)
 
     def to_dict(self) -> dict:
+        from .config import config_hash
+
+        def _r(x, n):
+            return None if x is None else round(x, n)
+
         return {
             "clip_id": self.clip_id,
+            "config_hash": config_hash(),
+            "anomalies": self.anomalies,
             "frame_w": self.frame_w,
             "frame_h": self.frame_h,
             "api_calls": self.api_calls,
@@ -127,8 +155,8 @@ class ClipRun:
                 "instances": [{
                     "object_id": i.object_id, "box": i.box,
                     "area_px": i.mask_area_px,
-                    "elongation": round(i.elongation, 3),
-                    "axis_tilt_deg": round(i.axis_tilt_deg, 1),
+                    "elongation": _r(i.elongation, 3),
+                    "axis_tilt_deg": _r(i.axis_tilt_deg, 1),
                     "bottom_band_share": round(i.bottom_band_share, 3),
                 } for i in k.instances],
             } for k in self.keyframes],
@@ -136,15 +164,19 @@ class ClipRun:
                 "track_id": t.track_id,
                 "frames": [{
                     "t_s": f.t_s, "area_px": f.area_px,
+                    "object_id": f.object_id, "box": f.box,
                     "aspect": round(f.aspect, 3),
-                    "elongation": round(f.elongation, 3),
-                    "axis_tilt_deg": round(f.axis_tilt_deg, 1),
+                    "elongation": _r(f.elongation, 3),
+                    "axis_tilt_deg": _r(f.axis_tilt_deg, 1),
                     "centroid_x": round(f.centroid_x, 4),
                     "centroid_y": round(f.centroid_y, 4),
                     "floor_proximity": round(f.floor_proximity, 4),
                     "bottom_band_share": round(f.bottom_band_share, 3),
                     "speed_hps": f.speed_hps,
                     "vy_hps": f.vy_hps,
+                    "dt_s": f.dt_s,
+                    "spans_gap": f.spans_gap,
+                    "match_iou": f.match_iou,
                 } for f in t.frames],
             } for t in self.tracks],
         }
@@ -152,12 +184,14 @@ class ClipRun:
 
 class SamRunner:
     def __init__(self, cache_dir: Path, transport: Transport,
-                 model: str = DEFAULT_MODEL, prompt: str = DEFAULT_PROMPT):
+                 model: str = DEFAULT_MODEL, prompt: str = DEFAULT_PROMPT,
+                 fail_on_anomaly: bool = True):
         self.cache_dir = Path(cache_dir) / "sam"
         self.cache_dir.mkdir(parents=True, exist_ok=True)
         self.transport = transport
         self.model = model
         self.prompt = prompt
+        self.fail_on_anomaly = fail_on_anomaly
 
     def _cache_path(self, image_bytes: bytes) -> Path:
         key = hashlib.sha256(
@@ -192,4 +226,9 @@ class SamRunner:
             track_input.append((t_s, instances))
         run.tracks, run.track_stats = build_tracks(
             track_input, frame_w, frame_h)
+        if self.fail_on_anomaly and run.anomaly_total:
+            raise ValueError(
+                f"{clip_id}: SAM returned evidence that did not become "
+                f"instances: {run.anomalies}. Refusing to score this "
+                "clip as if that evidence did not exist.")
         return run

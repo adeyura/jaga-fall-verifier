@@ -30,7 +30,8 @@ def main() -> None:
     frames_dir = cache_root / "keyframes" / clip_id
     frames_dir.mkdir(parents=True, exist_ok=True)
     frames = sample_frames(video, frames_dir, fps)
-    runner = SamRunner(cache_root, helper_transport(HELPER))
+    runner = SamRunner(cache_root, helper_transport(HELPER),
+                       fail_on_anomaly=False)
     run = runner.run_keyframes(clip_id, frames)
     out_dir = cache_root / "runs"
     out_dir.mkdir(parents=True, exist_ok=True)

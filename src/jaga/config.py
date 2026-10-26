@@ -31,8 +31,10 @@ FEATURES = {
     "iou_threshold": 0.2,        # keyframe association threshold (box IoU)
     "max_missed_keyframes": 1,   # a track survives this many missed keyframes
     "stillness_window_s": 3.0,   # trailing window for the stillness measure
-    "stillness_min_span_s": 2.0, # min observed span before stillness is known
+    "stillness_min_span_s": 2.5, # min observed span before stillness is known
+    "stillness_max_gap_s": 1.0,  # max unobserved gap inside that span
     "bottom_band_frac": 0.2,     # mask rows counted as the base band
+    "min_mask_area_px": 25,      # below this a mask is segmentation noise
 }
 
 TIMING = {

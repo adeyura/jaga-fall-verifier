@@ -44,21 +44,28 @@ def _iou(a: tuple[int, int, int, int], b: tuple[int, int, int, int]) -> float:
 @dataclass
 class KeyframeFeatures:
     t_s: float
+    object_id: str
+    box: tuple[int, int, int, int]
     area_px: int
     aspect: float
-    elongation: float
-    axis_tilt_deg: float
+    elongation: float | None
+    axis_tilt_deg: float | None
     centroid_x: float     # normalized 0..1 across frame width
     centroid_y: float     # normalized 0..1 down frame height
-    floor_proximity: float  # mask bottom / frame height, 0..1
+    floor_proximity: float  # mask bottom edge / frame height, 0..1
     bottom_band_share: float  # share of mask pixels in its base band
     speed_hps: float | None  # None on a track's first point
     vy_hps: float | None     # signed vertical speed, +down; None likewise
+    dt_s: float | None       # gap since the track's previous point
+    spans_gap: bool          # this point follows a missed keyframe
+    match_iou: float | None  # winning association IoU; None at birth
 
 
 @dataclass
 class Track:
     track_id: int
+    frame_w: int = 0
+    frame_h: int = 0
     frames: list[KeyframeFeatures] = field(default_factory=list)
     last_box: tuple[int, int, int, int] = (0, 0, 0, 0)
     last_t: float = 0.0
@@ -80,6 +87,12 @@ def build_tracks(keyframes: list[tuple[float, list[Instance]]],
     speeds.
     """
     from .config import FEATURES
+    import math
+    if not (math.isfinite(frame_w) and math.isfinite(frame_h)
+            and frame_w > 0 and frame_h > 0):
+        raise ValueError(
+            f"frame dimensions must be positive and finite: "
+            f"{frame_w}x{frame_h}")
     if iou_threshold is None:
         iou_threshold = FEATURES["iou_threshold"]
     if max_missed is None:
@@ -87,11 +100,17 @@ def build_tracks(keyframes: list[tuple[float, list[Instance]]],
     tracks: list[Track] = []
     next_id = 0
     prev_t: float | None = None
+    n_instances = 0
+    n_matched = 0
+    n_gap_points = 0
     for t_s, instances in keyframes:
+        if not math.isfinite(t_s):
+            raise ValueError(f"keyframe time is not finite: {t_s}")
         if prev_t is not None and t_s < prev_t:
             raise ValueError(
                 f"keyframe times go backwards: {prev_t} then {t_s}")
         prev_t = t_s
+        n_instances += len(instances)
         open_tracks = [t for t in tracks if not t.closed]
         pairs = []
         for ii, inst in enumerate(instances):
@@ -102,27 +121,42 @@ def build_tracks(keyframes: list[tuple[float, list[Instance]]],
         pairs.sort(reverse=True)
         used_inst: set[int] = set()
         used_track: set[int] = set()
-        assignment: dict[int, Track] = {}
+        assignment: dict[int, tuple[Track, float]] = {}
         by_id = {t.track_id: t for t in open_tracks}
-        for _v, ii, tid in pairs:
+        for v, ii, tid in pairs:
             if ii in used_inst or tid in used_track:
                 continue
             used_inst.add(ii)
             used_track.add(tid)
-            assignment[ii] = by_id[tid]
+            assignment[ii] = (by_id[tid], v)
         for tr in open_tracks:
             if tr.track_id not in used_track:
                 tr.missed += 1
                 if tr.missed > max_missed:
                     tr.closed = True
         for ii, inst in enumerate(instances):
-            tr = assignment.get(ii)
-            if tr is None:
-                tr = Track(track_id=next_id)
+            got = assignment.get(ii)
+            match_iou: float | None = None
+            spans_gap = False
+            dt_s: float | None = None
+            if got is None:
+                tr = Track(track_id=next_id, frame_w=frame_w,
+                           frame_h=frame_h)
                 next_id += 1
                 tracks.append(tr)
+            else:
+                tr, match_iou = got
+                n_matched += 1
+                spans_gap = tr.missed > 0
+                dt_s = t_s - tr.last_t
+                if spans_gap:
+                    n_gap_points += 1
             cx = (inst.box[0] + inst.centroid_xy[0]) / frame_w
             cy = (inst.box[1] + inst.centroid_xy[1]) / frame_h
+            if not (math.isfinite(cx) and math.isfinite(cy)):
+                raise ValueError(
+                    f"non-finite centroid for instance {inst.object_id} "
+                    f"at t={t_s}")
             speed: float | None = None
             vy: float | None = None
             if tr.frames:
@@ -135,15 +169,20 @@ def build_tracks(keyframes: list[tuple[float, list[Instance]]],
                     vy = dy_h / dt
             tr.frames.append(KeyframeFeatures(
                 t_s=t_s,
+                object_id=inst.object_id,
+                box=inst.box,
                 area_px=inst.mask_area_px,
                 aspect=(inst.box[2] - inst.box[0]) / max(1, inst.box[3] - inst.box[1]),
                 elongation=inst.elongation,
                 axis_tilt_deg=inst.axis_tilt_deg,
                 centroid_x=cx, centroid_y=cy,
-                floor_proximity=(inst.box[1] + inst.bottom_y) / frame_h,
+                floor_proximity=(inst.box[1] + inst.bottom_y + 1) / frame_h,
                 bottom_band_share=inst.bottom_band_share,
                 speed_hps=speed,
                 vy_hps=vy,
+                dt_s=dt_s,
+                spans_gap=spans_gap,
+                match_iou=match_iou,
             ))
             tr.last_box = inst.box
             tr.last_t = t_s
@@ -152,13 +191,21 @@ def build_tracks(keyframes: list[tuple[float, list[Instance]]],
     stats = {
         "tracks_total": len(live),
         "single_keyframe_tracks": sum(1 for t in live if len(t.frames) == 1),
+        "instances_total": n_instances,
+        "instances_matched": n_matched,
+        "instances_new_tracks": n_instances - n_matched,
+        "points_spanning_gap": n_gap_points,
+        "iou_threshold": iou_threshold,
+        "max_missed_keyframes": max_missed,
     }
     return live, stats
 
 
-def stillness(track: Track, frame_w: int, frame_h: int,
+def stillness(track: Track, frame_w: int | None = None,
+              frame_h: int | None = None,
               window_s: float | None = None,
               min_span_s: float | None = None,
+              max_gap_s: float | None = None,
               after_s: float | None = None) -> float | None:
     """Max pairwise centroid displacement (frame heights) in the window.
 
@@ -168,17 +215,37 @@ def stillness(track: Track, frame_w: int, frame_h: int,
     that reaches back across the descent itself would read the fall as
     movement and condemn every real fall on a short track.
 
-    Returns None when the window holds fewer than two observations or
-    they span less than min_span_s of real time. Unknown is reported as
+    Returns None when the evidence cannot support a stillness claim:
+    fewer than two observations, an observed span shorter than
+    min_span_s, or an unobserved gap longer than max_gap_s inside the
+    span (two identical centroids with an unobserved interval between
+    them prove nothing about the interval). Unknown is reported as
     unknown: a fragmented or newborn track must never read as still.
+    Frame dimensions default to the ones the track was built with; a
+    caller passing different dimensions raises, because silently
+    rescaling evidence is how plausible wrong numbers are born.
     Displacement is in frame-height units, the same scaling as speed.
     Window defaults come from config.FEATURES.
     """
     from .config import FEATURES
+    import math
+    if frame_w is None:
+        frame_w = track.frame_w
+    if frame_h is None:
+        frame_h = track.frame_h
+    if track.frame_w and (frame_w != track.frame_w
+                          or frame_h != track.frame_h):
+        raise ValueError(
+            f"stillness called with {frame_w}x{frame_h} but the track "
+            f"was built at {track.frame_w}x{track.frame_h}")
+    if not (frame_w and frame_h and frame_w > 0 and frame_h > 0):
+        raise ValueError("stillness needs positive frame dimensions")
     if window_s is None:
         window_s = FEATURES["stillness_window_s"]
     if min_span_s is None:
         min_span_s = FEATURES["stillness_min_span_s"]
+    if max_gap_s is None:
+        max_gap_s = FEATURES["stillness_max_gap_s"]
     if not track.frames:
         return None
     end_t = track.frames[-1].t_s
@@ -189,9 +256,14 @@ def stillness(track: Track, frame_w: int, frame_h: int,
            for f in track.frames if f.t_s >= start_t]
     if len(pts) < 2 or pts[-1][2] - pts[0][2] < min_span_s:
         return None
+    for a, b in zip(pts, pts[1:]):
+        if b[2] - a[2] > max_gap_s:
+            return None
     best = 0.0
     for i in range(len(pts)):
         for j in range(i + 1, len(pts)):
             d = ((pts[i][0] - pts[j][0]) ** 2 + (pts[i][1] - pts[j][1]) ** 2) ** 0.5
+            if not math.isfinite(d):
+                raise ValueError("non-finite centroid in stillness window")
             best = max(best, d)
     return best

@@ -65,9 +65,11 @@ def traces_text(clip_id: str, run, timing, verdict) -> str:
                   if t.track_id == verdict.track_id), None)
     if track is not None:
         for f in track.frames:
+            tilt = ("abstain" if f.axis_tilt_deg is None
+                    else f"{f.axis_tilt_deg:.0f}")
             lines.append(
-                f"  {f.t_s:.1f}s tilt={f.axis_tilt_deg:.0f} "
-                f"elong={f.elongation:.2f} floor={f.floor_proximity:.2f} "
+                f"  {f.t_s:.1f}s tilt={tilt} "
+                f"elong={f.elongation} floor={f.floor_proximity:.2f} "
                 f"band={f.bottom_band_share:.2f} "
                 f"speed={f.speed_hps if f.speed_hps is None else round(f.speed_hps, 3)}")
     lines.append(f"SAM keyframes: {len(run.keyframes)}, "
@@ -81,7 +83,8 @@ def main() -> None:
     cache_root = ROOT / "cache"
     frames_dir = cache_root / "keyframes" / clip_id
     frames = sample_frames(video, frames_dir, 2.0)
-    runner = SamRunner(cache_root, helper_transport(HELPER))
+    runner = SamRunner(cache_root, helper_transport(HELPER),
+                       fail_on_anomaly=False)
     run = runner.run_keyframes(clip_id, frames)
     timing = timing_from_video(video)
     verdict = rules_mod.evaluate(run.tracks, run.frame_w, run.frame_h,
