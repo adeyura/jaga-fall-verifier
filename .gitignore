@@ -28,3 +28,4 @@ tests/fixtures/attr_frame.png
 tests/fixtures/picker_frame_*.png
 tests/fixtures/picker_out_*.png
 !tests/fixtures/tiny.mp4
+.venv/
