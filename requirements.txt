@@ -1,0 +1,4 @@
+# Pinned runtime dependencies for the Jaga pipeline.
+# meta-sam-parser is Meta's official decoder for SAM 3.1 API streams.
+numpy==1.26.4
+meta-sam-parser==0.0.5
