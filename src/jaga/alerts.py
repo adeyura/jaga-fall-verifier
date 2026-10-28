@@ -3,8 +3,8 @@
 Working software for the response half of Jaga. The verifier's final
 disposition for a clip maps to a tier:
 
-- Urgent: a confirmed fall (adjudicator "fall", or a rules
-  fall_candidate the adjudicator did not clear).
+- Urgent: a confirmed fall (a rules fall_candidate that stands
+  uncleared, or an adjudicator "fall" where adjudication runs).
 - Check now: anything uncertain — rules uncertainty, an adjudicator
   that escalated or was unusable, or verification unavailable
   (fail-safe: when the cloud stage cannot answer, a human hears
@@ -73,8 +73,7 @@ def tier_for(d: Disposition) -> tuple[str, str]:
     elif d.adjudicator_usable and d.adjudicator_verdict == "benign":
         tier, reason = TIER_NONE, "adjudicator cleared the event as benign"
     elif d.rules_label == "fall_candidate":
-        tier, reason = TIER_URGENT, ("rules fall candidate not cleared "
-                                     "by the adjudicator")
+        tier, reason = TIER_URGENT, "rules fall candidate not cleared"
     elif d.adjudicator_usable and d.adjudicator_verdict == "uncertain":
         tier, reason = TIER_CHECK, "adjudicator escalated as uncertain"
     elif d.rules_label in ("uncertain", "no_evidence"):

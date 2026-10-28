@@ -2,7 +2,8 @@
 
 The shape is the SPEC's: upright, then a rapid descent of 0.4 to 1.0 s,
 then horizontal, then still for the window after the descent. The
-rules stage is tuned for recall; precision is the adjudicator's job.
+rules stage is tuned for recall; in the shipped configuration it is
+also the final disposition.
 What this module owes the rest of the system is not a bare label but
 an evidence record: every phase reports what was measured, and
 missing evidence is a distinct outcome, never a quiet negative.
@@ -15,7 +16,7 @@ Labels:
   descent with a clear upright-to-horizontal transition, a descent
   whose duration the keyframe rate cannot measure, or stillness that
   could not be observed for long enough. Uncertainty escalates to a
-  human or to the adjudicator; it never defaults to silence.
+  human; it never defaults to silence.
 - negative: the evidence contradicts a fall (descent measured too
   slow, never upright before, never horizontal after, or the person
   moved in the window after the descent, or no descent and no posture
