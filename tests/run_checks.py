@@ -977,7 +977,7 @@ def _():
 def _():
     v = run_rules(FALL_FRAMES, timing(2.9, 3.7))
     assert v.params["view"] == "side"
-    assert v.params["rules"]["descent_min_s"] == 0.4
+    assert v.params["rules"]["descent_min_s"] == 0.15
     assert v.params["stillness"]["stillness_min_span_s"] == 2.5
     assert v.params["params_overridden"] is False
     tracks, _ = build_tracks(FALL_FRAMES, W, H)

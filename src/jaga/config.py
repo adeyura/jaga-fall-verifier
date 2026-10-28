@@ -67,7 +67,9 @@ RULES = {
     "upright_tilt_min_deg": 55.0,   # axis tilt at/above: upright posture
     "horizontal_tilt_max_deg": 35.0,  # axis tilt at/below: horizontal
     "min_elongation": 1.2,       # below this the axis is ill-defined
-    "descent_min_s": 0.4,        # SPEC: rapid descent window
+    "descent_min_s": 0.15,       # SPEC P3 side window; lower bound
+                                 # amended 2026-10-28 (see the SPEC
+                                 # amendment of that date)
     "descent_max_s": 1.0,
     "descent_vy_min_hps": 0.25,
     "fallback_min_match_iou": 0.2,  # fallback trusts a keyframe step

@@ -245,3 +245,21 @@ The D3 A/B/C comparison ran on the UR Fall dev shakedown set (6 ceiling falls, 6
 Recall to a human (fall or uncertain, the D1 not-missed definition) is identical across forms. Images added nothing over traces on this evidence, and the overlay form confirmed nothing: from a ceiling view, a mask silhouette over a blurred background carries too little posture information for the adjudicator to commit. ADOPTED: the scored evidence form is **traces only** (form C). It ties the best confirmation rate, and it is the strongest privacy form of the three — no image data of any kind leaves the machine in the evidence pack. The overlay form remains implemented and recorded as a non-scored form.
 
 Obligation carried forward: this set contains no side-view falls (UR Fall's confound). The A/B/C must be re-run on the UP-Fall dev split when it exists; if overlays confirm side-view falls materially better than traces there, a further dated amendment may adopt a per-view scored form before the gate run. The D1 gate runs under the form in force at that time, recorded on every result.
+
+## Amendment 2026-10-28: P3 side-view descent window — lower bound 0.4 s → 0.15 s
+
+The frozen text scheduled this check: the side-view window was "to be checked against UP-Fall dev-split fall distributions before the confirmation run — any change is a dated amendment made before that run, with the test split untouched." The check ran on dev data only: the UP-Fall Subject 1 fall timing measurement (2026-10-28), and the dev core measurements of the same date (Le2i-dev falls; UP-Fall Subject 1 hard negatives). The test split is untouched. ADOPTED: the side-view descent window is **[0.15, 1.0] s**. The upper bound is unchanged; the ceiling window [0.15, 1.35] s is untouched.
+
+Derivation: the lower bound sits just below the minimum reliably descent-selected dev fall core (0.17 s, UP-Fall Subject 1) and equals the timing stage's existing lower selection bound (TIMING min_duration_s = 0.15 s). Timing-module fallback rows (cores 0.10-0.13 s) were excluded from fitting as measurement artifacts: a fallback value is what the timing module reports when it finds no qualifying interval, not a clean descent measurement.
+
+Evidence (dev only):
+
+- UP-Fall Subject 1 falls: reliably descent-selected cores span 0.17-0.63 s, median 0.30 s (23 of 30 clips; the other 7 are fallback rows). Under the old window 7/30 clips were in-window; under the amended window 23/30 are — the exclusions are exactly the fallback artifacts.
+- Le2i-dev falls: median core 0.73 s, tail to 1.73 s (83 measured; 70 in-window under the amended bounds, 12 above 1.0 s, 1 fallback row). Falls above 1.0 s are not cleared by this window: they escalate via the P3 safeguard composition and are reported in the escalation rate, not as cleared negatives.
+- Dev hard negatives (UP-Fall Subject 1 ADL): 9 of 18 clips produced no timing interval at all, including 5 of the 6 lie-down views, and the measured cores overlap the fall range. The window is therefore a calibration bound, not the discrimination mechanism; the posture and stillness phases carry the discrimination.
+
+Basis: amend the lower bound only, and only after measurement (2026-10-28); the dev core measurement satisfied the measure-first condition.
+
+Limitation, stated: descent-core distributions are dataset-dependent (UP-Fall fall median 0.30 s vs Le2i 0.73 s). The amended window covers the union of the dev evidence; confirmation reporting stays stratified by dataset, and a divergent confirmation distribution is reported, not re-tuned against.
+
+Gate parameters: this changes src/jaga/config.py (RULES descent_min_s 0.4 → 0.15). config_hash d940d0c26c123909 → 6d7c03257b12ab00, recorded here; scored runs continue to stamp the hash they ran under.
