@@ -1,0 +1,31 @@
+filename,activity,trial,camera,gate_segments,onset_s,core_duration_s,full_run_s,in_window,note
+Subject1Activity1Trial1_Camera1.zip,1,1,camera1,1,3.17,0.30,1.63,no,
+Subject1Activity1Trial1_Camera2.zip,1,1,camera2,1,4.00,0.10,0.30,no,no interval inside the timing module's descent selection bounds; strongest interval recorded
+Subject1Activity1Trial2_Camera1.zip,1,2,camera1,1,2.33,0.30,0.63,no,
+Subject1Activity1Trial2_Camera2.zip,1,2,camera2,1,2.33,0.40,0.47,no,"core is exactly 12 steps of the 30 fps timing series = 0.40 s in step terms; the float value sits a hair below the 0.4 bound and is counted by the raw float, as the rules stage compares it"
+Subject1Activity1Trial3_Camera1.zip,1,3,camera1,1,0.50,0.47,2.37,yes,
+Subject1Activity1Trial3_Camera2.zip,1,3,camera2,1,1.33,0.13,1.30,no,no interval inside the timing module's descent selection bounds; strongest interval recorded
+Subject1Activity2Trial1_Camera1.zip,2,1,camera1,1,0.67,0.30,1.70,no,
+Subject1Activity2Trial1_Camera2.zip,2,1,camera2,1,1.17,0.37,1.10,no,
+Subject1Activity2Trial2_Camera1.zip,2,2,camera1,1,0.50,0.63,2.43,yes,
+Subject1Activity2Trial2_Camera2.zip,2,2,camera2,1,1.17,0.13,1.60,no,no interval inside the timing module's descent selection bounds; strongest interval recorded
+Subject1Activity2Trial3_Camera1.zip,2,3,camera1,1,0.50,0.30,2.43,no,
+Subject1Activity2Trial3_Camera2.zip,2,3,camera2,1,1.00,0.27,1.30,no,
+Subject1Activity3Trial1_Camera1.zip,3,1,camera1,1,0.67,0.13,1.80,no,no interval inside the timing module's descent selection bounds; strongest interval recorded
+Subject1Activity3Trial1_Camera2.zip,3,1,camera2,1,2.33,0.17,0.27,no,
+Subject1Activity3Trial2_Camera1.zip,3,2,camera1,1,1.00,0.47,1.63,yes,
+Subject1Activity3Trial2_Camera2.zip,3,2,camera2,1,1.17,0.27,1.30,no,
+Subject1Activity3Trial3_Camera1.zip,3,3,camera1,1,0.33,0.13,2.63,no,no interval inside the timing module's descent selection bounds; strongest interval recorded
+Subject1Activity3Trial3_Camera2.zip,3,3,camera2,1,0.83,0.47,0.97,yes,
+Subject1Activity4Trial1_Camera1.zip,4,1,camera1,1,0.50,0.30,1.63,no,
+Subject1Activity4Trial1_Camera2.zip,4,1,camera2,1,0.70,0.30,1.27,no,
+Subject1Activity4Trial2_Camera1.zip,4,2,camera1,1,0.50,0.63,1.80,yes,
+Subject1Activity4Trial2_Camera2.zip,4,2,camera2,1,1.50,0.30,0.87,no,
+Subject1Activity4Trial3_Camera1.zip,4,3,camera1,1,0.67,0.47,1.63,yes,
+Subject1Activity4Trial3_Camera2.zip,4,3,camera2,1,1.17,0.13,0.97,no,no interval inside the timing module's descent selection bounds; strongest interval recorded
+Subject1Activity5Trial1_Camera1.zip,5,1,camera1,1,0.50,0.60,1.63,yes,
+Subject1Activity5Trial1_Camera2.zip,5,1,camera2,1,1.17,0.30,0.87,no,
+Subject1Activity5Trial2_Camera1.zip,5,2,camera1,1,1.17,0.30,0.97,no,
+Subject1Activity5Trial2_Camera2.zip,5,2,camera2,1,0.37,0.30,0.60,no,
+Subject1Activity5Trial3_Camera1.zip,5,3,camera1,1,0.83,0.30,2.10,no,
+Subject1Activity5Trial3_Camera2.zip,5,3,camera2,1,1.33,0.13,1.30,no,no interval inside the timing module's descent selection bounds; strongest interval recorded
