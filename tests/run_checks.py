@@ -1189,6 +1189,80 @@ def _():
     assert audit.credential_hit(mixed)
 
 
+def _audit_main_on(files):
+    """End-to-end classification (added 2026-10-30): build a
+    throwaway git repo whose only commit adds `files` ({path: text}),
+    run audit_history.main() inside it, return (exit_code, output).
+    The unit checks above exercise amendment_suppresses() in isolation;
+    these exercise the classification main() actually applies."""
+    import contextlib as _ctx
+    import io as _io
+    import subprocess as _sp
+    audit = _audit_module()
+    with tempfile.TemporaryDirectory() as td:
+        def _git(*args):
+            _sp.run(["git", "-C", td, *args], check=True,
+                    capture_output=True, text=True)
+        _git("init", "-q")
+        for rel, text in files.items():
+            p = Path(td) / rel
+            p.parent.mkdir(parents=True, exist_ok=True)
+            p.write_text(text)
+        _git("add", "-A")
+        _git("-c", "user.name=Audit Checks",
+             "-c", "user.email=audit-checks@example.invalid",
+             "-c", "commit.gpgsign=false",
+             "commit", "-q", "-m", "fixture")
+        out = _io.StringIO()
+        cwd = os.getcwd()
+        try:
+            os.chdir(td)
+            with _ctx.redirect_stdout(out):
+                rc = audit.main()
+        finally:
+            os.chdir(cwd)
+        return rc, out.getvalue()
+
+
+@check("audit main: a labelled non-matching hash in prose fails (D1)")
+def _():
+    rc, out = _audit_main_on({
+        "notes.md": "The sha256 is " + "c" * 64 + " for this download.\n"})
+    assert rc == 1 and "AUDIT FAILED" in out, out
+
+
+@check("audit main: verified hash naming the wrong file fails (D2)")
+def _():
+    rc, out = _audit_main_on({
+        "notes.md": "- `results/split_test.csv` — 68 rows\n"
+                    "  SHA-256: `" + _verified_value() + "`\n"})
+    assert rc == 1 and "AUDIT FAILED" in out, out
+
+
+@check("audit main: verified hash with no file named fails (D2)")
+def _():
+    rc, out = _audit_main_on({
+        "notes.md": "Recorded checksum, SHA-256: `"
+                    + _verified_value() + "`\n"})
+    assert rc == 1 and "AUDIT FAILED" in out, out
+
+
+@check("audit main: verified hash, labelled, correct file, suppressed")
+def _():
+    rc, out = _audit_main_on({
+        "notes.md": "- `results/split_dev.csv` — 215 rows\n"
+                    "  SHA-256: `" + _verified_value() + "`\n"})
+    assert rc == 0 and "SUPPRESSED" in out, out
+
+
+@check("audit main: a credential pattern inside a results table fails")
+def _():
+    cred = "api" + "_key = " + '"' + "X" * 24 + '"'
+    rc, out = _audit_main_on({
+        "results/fixture.csv": "file,note\nSubject9.zip," + cred + "\n"})
+    assert rc == 1 and "AUDIT FAILED" in out, out
+
+
 # ------------------------------------------------------- alerts (D2)
 @check("alerts: the full disposition table (D1 semantics, monotonic)")
 def _():

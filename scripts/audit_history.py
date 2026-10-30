@@ -5,9 +5,19 @@ Run before the first GitHub push and again before submission (DECISIONS.md,
 plus the tracked file list. Exits nonzero on any real hit so it can gate
 a push.
 
-This repo legitimately contains sha256 checksums (dataset provenance in
-results/). Hex/base64 blobs in checksum contexts are counted and reported
-as expected content, not failures; the same shapes anywhere else fail.
+This repo legitimately contains sha256 checksums (dataset provenance).
+Hex/base64-shaped values inside the machine-generated provenance tables
+under results/ (*.csv / *.json: download manifests, split files, run
+receipts) are counted and reported as expected provenance data, not
+failures. That treatment is scoped to those tables only (see
+is_checksum_context): of their 547 shape-matching lines, basename
+recomputation resolves only 80 — the rest are clip-level hashes whose
+named archive is a room zip, receipt rows naming no file on the
+value's line, and hashes of derived files — so a strict per-line
+recomputation rule is not viable there. It is not a prose exemption:
+anywhere else, the same shapes fail unless the amendment test below
+suppresses them. Credential patterns are checked first, on every line,
+in every file, tables included, and can never be exempted.
 
 Amendment (DECISIONS.md, 2026-10-30): a 64-hex value in prose is
 suppressed only when ALL THREE hold — it is explicitly labelled
@@ -77,6 +87,21 @@ def _sha256_of_file(path: Path) -> str:
     return h.hexdigest()
 
 
+def _context_names_file(context: str, mapped: str) -> bool:
+    """True when the surrounding prose names the project file `mapped`:
+    by its repo path, by its file name, or by its stem (citing files
+    may name the UP-Fall zip by its clip name,
+    Subject1Activity1Trial1_Camera1, without the .zip extension). The
+    stem must stand as its own token,
+    not glued to other file-name characters."""
+    if mapped in context or Path(mapped).name in context:
+        return True
+    stem = Path(mapped).stem
+    return bool(re.search(
+        r"(?<![A-Za-z0-9_\-])" + re.escape(stem) + r"(?![A-Za-z0-9_\-])",
+        context))
+
+
 def is_verified_checksum(value: str, context: str) -> bool:
     """The amendment test for one 64-hex value, as a conjunction:
     (i) the context explicitly labels it "SHA-256"; AND (ii)+(iii) the
@@ -86,7 +111,12 @@ def is_verified_checksum(value: str, context: str) -> bool:
     if not SHA256_LABEL.search(context):
         return False
     if value in VERIFIED_PROVENANCE_HASHES:
-        return True
+        # Conjunct (ii): the prose must name the file this value is
+        # verified against (the allowlist mapping), not just any file,
+        # and not no file. (2026-10-30, defect D2: the
+        # mapping was previously never read, so a bare label sufficed.)
+        return _context_names_file(
+            context, VERIFIED_PROVENANCE_HASHES[value])
     for token in FILE_TOKEN.findall(context):
         candidate = Path(token.strip("`\"'(),:;"))
         if candidate.is_file() and _sha256_of_file(candidate) == value:
@@ -109,9 +139,39 @@ def git(*args: str) -> str:
 
 
 def is_checksum_context(path: str, line: str) -> bool:
-    if "sha256" in line:
-        return True
+    """Checksum-context treatment, scoped to the machine-generated
+    provenance tables under results/ (*.csv / *.json) ONLY. A prose
+    line earns no exemption from its content — not even from carrying
+    the substring "sha256": that branch let a labelled, non-matching
+    hash in prose pass, contradicting the 2026-10-30 amendment
+    (defect D1). Prose is governed solely by
+    amendment_suppresses(). The `line` argument is kept for signature
+    compatibility and is deliberately unused."""
     return path.startswith("results/") and path.endswith((".json", ".csv"))
+
+
+def _surrounding(records: list[tuple[str, str]], i: int,
+                 reach: int = 6) -> list[str]:
+    """The prose surrounding records[i]: up to `reach` added lines on
+    either side within the same file, stopping at a blank line. The
+    amendment test reads this context because the prose naming a
+    checksum's file may sit before OR after the value (DECISIONS.md
+    lists each checksum first and names its file in the lines that
+    follow)."""
+    path = records[i][0]
+    lo = i
+    while lo > 0 and i - lo < reach:
+        p, b = records[lo - 1]
+        if p != path or not b.strip():
+            break
+        lo -= 1
+    hi = i
+    while hi < len(records) - 1 and hi - i < reach:
+        p, b = records[hi + 1]
+        if p != path or not b.strip():
+            break
+        hi += 1
+    return [b for _, b in records[lo:hi + 1]]
 
 
 def main() -> int:
@@ -125,18 +185,22 @@ def main() -> int:
         if BAD_NAMES.search(n) and not n.endswith(".example"):
             print(f"  BAD FILENAME tracked: {n}")
             hits += 1
+    # Collect every added line first: classification needs the
+    # surrounding prose (see _surrounding), which may follow the line.
+    records: list[tuple[str, str]] = []
     path = ""
-    recent: list[str] = []  # surrounding prose for the amendment test
     for line in git("log", "-p", "--all", "--no-color").splitlines():
         if line.startswith("+++ b/"):
             path = line[6:]
-            recent = []
             continue
         if not line.startswith("+") or line.startswith("+++"):
             continue
-        body = line[1:]
-        context = "\n".join([*recent[-2:], body])
-        recent.append(body)
+        records.append((path, line[1:]))
+    for i, (path, body) in enumerate(records):
+        context = "\n".join(_surrounding(records, i))
+        # Credential patterns first, on every line, in every file —
+        # including results/ tables and base64-shaped lines. A hit here
+        # can never be reclassified as checksum context or suppressed.
         failed = False
         for p in FAIL_PATTERNS:
             if p.search(body):
