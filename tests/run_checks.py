@@ -1126,6 +1126,69 @@ def _():
         _msp.parse_responses_stream = real
 
 
+# ------------------------------------------------------- secret audit
+def _audit_module():
+    import importlib.util as _ilu
+    spec = _ilu.spec_from_file_location(
+        "audit_history", ROOT / "scripts" / "audit_history.py")
+    mod = _ilu.module_from_spec(spec)
+    spec.loader.exec_module(mod)
+    return mod
+
+
+def _verified_value():
+    # The amendment's first verified checksum, built from fragments so
+    # this file's own text carries no literal 64-hex string.
+    return "".join(["f968ee85b519ecc6", "9d9506b55f4ad659",
+                    "02d49c49052e1d80", "b1b906b666607895"])
+
+
+@check("audit: a labelled, verified checksum is suppressed (amendment)")
+def _():
+    audit = _audit_module()
+    body = "  SHA-256: `" + _verified_value() + "`"
+    context = "- `results/split_dev.csv` — 215 rows\n" + body
+    assert audit.amendment_suppresses(body, context)
+
+
+@check("audit: suppression also works by live recomputation")
+def _():
+    import hashlib as _hl
+    audit = _audit_module()
+    with tempfile.TemporaryDirectory() as td:
+        p = Path(td) / "provenance.bin"
+        p.write_bytes(b"jaga audit test fixture")
+        value = _hl.sha256(b"jaga audit test fixture").hexdigest()
+        body = "  SHA-256: `" + value + "`"
+        context = "checksum of " + str(p) + "\n" + body
+        assert audit.amendment_suppresses(body, context)
+
+
+@check("audit: a labelled hash that does not recompute still fails")
+def _():
+    audit = _audit_module()
+    body = "  SHA-256: `" + "a" * 64 + "`"
+    context = "- `results/split_dev.csv` — 215 rows\n" + body
+    assert not audit.amendment_suppresses(body, context)
+
+
+@check("audit: an unlabelled 64-hex string still fails")
+def _():
+    audit = _audit_module()
+    body = "  (" + "b" * 64 + ")."
+    assert not audit.amendment_suppresses(body, body)
+
+
+@check("audit: credential patterns are never exempted")
+def _():
+    audit = _audit_module()
+    cred = "api" + "_key = " + '"' + "X" * 24 + '"'
+    assert audit.credential_hit(cred)
+    # even on a line that also carries a labelled, verified checksum
+    mixed = "SHA-256: `" + _verified_value() + "` " + cred
+    assert audit.credential_hit(mixed)
+
+
 # ------------------------------------------------------- alerts (D2)
 @check("alerts: the full disposition table (D1 semantics, monotonic)")
 def _():
