@@ -18,6 +18,20 @@ deployed, it does not protect anyone yet, and every number below is a
 benchmark result on public datasets — evidence of feasibility, not of
 real-world performance.
 
+## Results at a glance
+
+From the frozen protocol: one confirmation run on the frozen test
+split, and the pre-registered gate that ran before it. The full
+record, with dev numbers and strata, is under
+[Evaluation](#evaluation).
+
+| | |
+|---|---|
+| Falls routed to a human (confirmed or escalated), frozen test | **19/27** (70.4%, 95% CI 51.5–84.1) |
+| Definitive-alert precision | **7/7** (95% CI 0.646–1.000), against 24 of 44 events escalated for human review |
+| Confirmed false alarms | **0** across 17 everyday-activity events (0 definitive false-positive confirmations in 0.18 h of ADL clips; exact Poisson 95% CI for the rate 0–20.5/h) |
+| The experiment that failed | The pre-registered gate for the Muse Spark adjudicator **failed**, and the component was removed; reported in full under Evaluation |
+
 ## The shipped system
 
 ```
