@@ -41,7 +41,7 @@ Primary track keyframes (t, axis tilt deg, elongation, mask area px, floor proxi
   9.0s tilt=0 elong=6.179 area=16059 floor=1.00 band=0.34 speed=0.002
   9.5s tilt=0 elong=6.176 area=16112 floor=1.00 band=0.34 speed=0.001
 SAM keyframes: 18, empty: 0, tracks: {'tracks_total': 5, 'single_keyframe_tracks': 3, 'instances_total': 23, 'instances_matched': 18, 'instances_new_tracks': 5, 'points_spanning_gap': 0, 'iou_threshold': 0.2, 'max_missed_keyframes': 1}
-[alerts] shipped configuration -> tier 'urgent' (rules fall candidate not cleared by the adjudicator)
+[alerts] shipped configuration -> tier 'urgent' (rules fall candidate not cleared)
 
 [recorded, not live] dev gate full arm adjudication: verdict 'uncertain' at confidence 0.55 (usable: True). In the dev gate this escalated the event; in the shipped configuration there is no adjudicator and the rules verdict above stands on its own.
 
