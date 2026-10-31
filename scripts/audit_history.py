@@ -28,6 +28,19 @@ that resolve). Suppressed values are printed, with a count, and a pass
 is reported as "PASS under the 2026-10-30 amendment", never as a pass
 of the original unamended rule. Credential patterns are checked first
 and can never be exempted.
+
+Amendment (DECISIONS.md, 2026-11-01): hash manifests under results/
+(*.sha256) join the provenance treatment, but format-validated, not
+shape-based: a line counts as expected provenance data only when the
+whole line strictly matches the sha256sum line format (64 lowercase
+hex, whitespace, one filename, nothing else), and any non-conforming
+non-empty line in such a file is a hit (fail-closed; enforced in
+main()). The treatment also requires a recomputation verification on
+record for the manifest; for results/sealed_files_manifest.sha256
+that record is results/sealed_files_manifest_verification.md
+(144/144 recomputed checksums matched, 2026-11-01). A pass relying
+on either amendment is reported as a pass under the amendments,
+never as a pass of the original unamended rule.
 """
 from __future__ import annotations
 
@@ -72,6 +85,19 @@ VERIFIED_PROVENANCE_HASHES = {
 HEX64 = re.compile(r"\b[0-9a-f]{64}\b")
 SHA256_LABEL = re.compile(r"sha[-\s]?256", re.IGNORECASE)
 FILE_TOKEN = re.compile(r"[A-Za-z0-9_./\-]+\.[A-Za-z0-9]{1,8}")
+
+# --- 2026-11-01 amendment (DECISIONS.md): hash manifests under
+# results/ (*.sha256). A line of such a file is expected provenance
+# data ONLY when the whole line strictly matches the sha256sum line
+# format; any non-conforming non-empty line is a hit (fail-closed,
+# enforced in main()). The treatment also requires a recomputation
+# verification on record for the manifest (DECISIONS.md, 2026-11-01).
+AMENDMENT_ID_2 = "2026-11-01"
+HASH_MANIFEST_LINE = re.compile(r"^[0-9a-f]{64}[ \t]+[^ \t]+$")
+
+
+def is_hash_manifest(path: str) -> bool:
+    return path.startswith("results/") and path.endswith(".sha256")
 
 
 def credential_hit(body: str) -> bool:
@@ -140,14 +166,18 @@ def git(*args: str) -> str:
 
 def is_checksum_context(path: str, line: str) -> bool:
     """Checksum-context treatment, scoped to the machine-generated
-    provenance tables under results/ (*.csv / *.json) ONLY. A prose
-    line earns no exemption from its content — not even from carrying
-    the substring "sha256": that branch let a labelled, non-matching
-    hash in prose pass, contradicting the 2026-10-30 amendment
-    (defect D1). Prose is governed solely by
-    amendment_suppresses(). The `line` argument is kept for signature
-    compatibility and is deliberately unused."""
-    return path.startswith("results/") and path.endswith((".json", ".csv"))
+    provenance tables under results/ (*.csv / *.json) ONLY, plus —
+    under the 2026-11-01 amendment — hash manifests under results/
+    (*.sha256), whose lines count only when each strictly matches
+    HASH_MANIFEST_LINE (there `line` is used, and is the whole test).
+    A prose line earns no exemption from its content — not even from
+    carrying the substring "sha256": that branch let a labelled,
+    non-matching hash in prose pass, contradicting the 2026-10-30
+    amendment (defect D1). Prose is governed
+    solely by amendment_suppresses()."""
+    if path.startswith("results/") and path.endswith((".json", ".csv")):
+        return True
+    return is_hash_manifest(path) and bool(HASH_MANIFEST_LINE.match(line))
 
 
 def _surrounding(records: list[tuple[str, str]], i: int,
@@ -210,6 +240,15 @@ def main() -> int:
                 break
         if failed:
             continue
+        # 2026-11-01 amendment, fail-closed: any non-empty line of a
+        # hash manifest under results/ that does not strictly match
+        # the manifest line format is a hit, whether or not it matches
+        # a shape pattern below.
+        if (is_hash_manifest(path) and body.strip()
+                and not HASH_MANIFEST_LINE.match(body)):
+            print(f"  HIT [hash-manifest format] in {path}: {body[:100]}")
+            hits += 1
+            continue
         for p in SHAPE_PATTERNS:
             if p.search(body):
                 if amendment_suppresses(body, context):
@@ -227,8 +266,8 @@ def main() -> int:
     if hits:
         print(f"AUDIT FAILED: {hits} hit(s). Do not push. Inspect each one.")
         return 1
-    print(f"AUDIT PASS under the {AMENDMENT_ID} amendment "
-          f"({suppressed} suppressed, 0 unsuppressed hits): "
+    print(f"AUDIT PASS under the {AMENDMENT_ID} and {AMENDMENT_ID_2} "
+          f"amendments ({suppressed} suppressed, 0 unsuppressed hits): "
           f"no credential-shaped content in history or filenames.")
     return 0
 
