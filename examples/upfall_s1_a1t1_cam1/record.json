@@ -1,0 +1,683 @@
+{
+ "clip_id": "Subject1Activity1Trial1_Camera1.zip",
+ "event": "upfall:S1:A1:T1",
+ "label": "fall",
+ "camera": "camera1",
+ "view": "side",
+ "config_hash": "6d7c03257b12ab00",
+ "gate": {
+  "n_segments": 1,
+  "flagged_s": 8.6,
+  "zero_candidate": false,
+  "stats": {
+   "segments_kept": 1,
+   "runs_dropped_short": 0,
+   "seconds_flagged": 8.6,
+   "zero_candidate": false,
+   "peak_motion": 7.117152690887451
+  }
+ },
+ "timing_descent": {
+  "onset_s": 3.17,
+  "core_duration_s": 0.3,
+  "run_duration_s": 1.63,
+  "peak_area_frac": 0.07
+ },
+ "recorded_tracks": [
+  {
+   "track_id": 0,
+   "frames": [
+    {
+     "t_s": 1.0,
+     "area_px": 18148,
+     "object_id": "0",
+     "box": [
+      406,
+      173,
+      492,
+      480
+     ],
+     "aspect": 0.28,
+     "elongation": 4.244,
+     "axis_tilt_deg": 85.9,
+     "centroid_x": 0.7044,
+     "centroid_y": 0.6754,
+     "floor_proximity": 1.0,
+     "bottom_band_share": 0.156,
+     "speed_hps": null,
+     "vy_hps": null,
+     "dt_s": null,
+     "spans_gap": false,
+     "match_iou": null
+    },
+    {
+     "t_s": 1.5,
+     "area_px": 18252,
+     "object_id": "0",
+     "box": [
+      405,
+      173,
+      492,
+      480
+     ],
+     "aspect": 0.283,
+     "elongation": 4.171,
+     "axis_tilt_deg": 85.7,
+     "centroid_x": 0.7037,
+     "centroid_y": 0.676,
+     "floor_proximity": 1.0,
+     "bottom_band_share": 0.156,
+     "speed_hps": 0.002126716244904889,
+     "vy_hps": 0.0011345154099640098,
+     "dt_s": 0.5,
+     "spans_gap": false,
+     "match_iou": 0.9885057471264368
+    },
+    {
+     "t_s": 2.0,
+     "area_px": 17909,
+     "object_id": "0",
+     "box": [
+      402,
+      174,
+      488,
+      480
+     ],
+     "aspect": 0.281,
+     "elongation": 4.338,
+     "axis_tilt_deg": 85.1,
+     "centroid_x": 0.7003,
+     "centroid_y": 0.6762,
+     "floor_proximity": 1.0,
+     "bottom_band_share": 0.158,
+     "speed_hps": 0.009217985462644955,
+     "vy_hps": 0.00042936359455403306,
+     "dt_s": 0.5,
+     "spans_gap": false,
+     "match_iou": 0.9193180584211098
+    },
+    {
+     "t_s": 2.5,
+     "area_px": 18213,
+     "object_id": "0",
+     "box": [
+      382,
+      174,
+      484,
+      480
+     ],
+     "aspect": 0.333,
+     "elongation": 3.921,
+     "axis_tilt_deg": 84.7,
+     "centroid_x": 0.692,
+     "centroid_y": 0.6762,
+     "floor_proximity": 1.0,
+     "bottom_band_share": 0.149,
+     "speed_hps": 0.02201184554035212,
+     "vy_hps": 0.0001298405203176145,
+     "dt_s": 0.5,
+     "spans_gap": false,
+     "match_iou": 0.7735849056603774
+    },
+    {
+     "t_s": 3.0,
+     "area_px": 18470,
+     "object_id": "0",
+     "box": [
+      379,
+      175,
+      479,
+      480
+     ],
+     "aspect": 0.328,
+     "elongation": 3.91,
+     "axis_tilt_deg": 83.4,
+     "centroid_x": 0.6858,
+     "centroid_y": 0.6771,
+     "floor_proximity": 1.0,
+     "bottom_band_share": 0.151,
+     "speed_hps": 0.0166225113198087,
+     "vy_hps": 0.0018289552047547897,
+     "dt_s": 0.5,
+     "spans_gap": false,
+     "match_iou": 0.9208765213060666
+    },
+    {
+     "t_s": 3.5,
+     "area_px": 20346,
+     "object_id": "0",
+     "box": [
+      264,
+      187,
+      474,
+      480
+     ],
+     "aspect": 0.717,
+     "elongation": 2.107,
+     "axis_tilt_deg": 66.2,
+     "centroid_x": 0.6125,
+     "centroid_y": 0.6724,
+     "floor_proximity": 1.0,
+     "bottom_band_share": 0.11,
+     "speed_hps": 0.1955823865339439,
+     "vy_hps": -0.009396153501649351,
+     "dt_s": 0.5,
+     "spans_gap": false,
+     "match_iou": 0.4336007477217852
+    },
+    {
+     "t_s": 4.0,
+     "area_px": 21831,
+     "object_id": "0",
+     "box": [
+      159,
+      264,
+      462,
+      480
+     ],
+     "aspect": 1.403,
+     "elongation": 1.815,
+     "axis_tilt_deg": 39.7,
+     "centroid_x": 0.4751,
+     "centroid_y": 0.8009,
+     "floor_proximity": 1.0,
+     "bottom_band_share": 0.249,
+     "speed_hps": 0.44749895577838267,
+     "vy_hps": 0.25684720907927305,
+     "dt_s": 0.5,
+     "spans_gap": false,
+     "match_iou": 0.5078731742073388
+    },
+    {
+     "t_s": 4.5,
+     "area_px": 18734,
+     "object_id": "0",
+     "box": [
+      51,
+      339,
+      408,
+      480
+     ],
+     "aspect": 2.532,
+     "elongation": 3.534,
+     "axis_tilt_deg": 11.3,
+     "centroid_x": 0.3664,
+     "centroid_y": 0.9144,
+     "floor_proximity": 1.0,
+     "bottom_band_share": 0.417,
+     "speed_hps": 0.3683580878113132,
+     "vy_hps": 0.22709741845969056,
+     "dt_s": 0.5,
+     "spans_gap": false,
+     "match_iou": 0.4351851851851852
+    },
+    {
+     "t_s": 5.0,
+     "area_px": 17708,
+     "object_id": "0",
+     "box": [
+      53,
+      400,
+      419,
+      480
+     ],
+     "aspect": 4.575,
+     "elongation": 5.507,
+     "axis_tilt_deg": 1.0,
+     "centroid_x": 0.3614,
+     "centroid_y": 0.9419,
+     "floor_proximity": 1.0,
+     "bottom_band_share": 0.325,
+     "speed_hps": 0.056598130763684314,
+     "vy_hps": 0.055009370514054856,
+     "dt_s": 0.5,
+     "spans_gap": false,
+     "match_iou": 0.5545033875471035
+    },
+    {
+     "t_s": 5.5,
+     "area_px": 17437,
+     "object_id": "0",
+     "box": [
+      52,
+      400,
+      421,
+      480
+     ],
+     "aspect": 4.612,
+     "elongation": 6.068,
+     "axis_tilt_deg": 0.4,
+     "centroid_x": 0.3684,
+     "centroid_y": 0.9458,
+     "floor_proximity": 1.0,
+     "bottom_band_share": 0.335,
+     "speed_hps": 0.020287863119064817,
+     "vy_hps": 0.007824666616248033,
+     "dt_s": 0.5,
+     "spans_gap": false,
+     "match_iou": 0.991869918699187
+    },
+    {
+     "t_s": 6.0,
+     "area_px": 16424,
+     "object_id": "0",
+     "box": [
+      54,
+      401,
+      417,
+      480
+     ],
+     "aspect": 4.595,
+     "elongation": 6.152,
+     "axis_tilt_deg": 0.4,
+     "centroid_x": 0.3647,
+     "centroid_y": 0.9486,
+     "floor_proximity": 1.0,
+     "bottom_band_share": 0.33,
+     "speed_hps": 0.011270141698497188,
+     "vy_hps": 0.00558688081363079,
+     "dt_s": 0.5,
+     "spans_gap": false,
+     "match_iou": 0.9714430894308943
+    },
+    {
+     "t_s": 6.5,
+     "area_px": 16230,
+     "object_id": "0",
+     "box": [
+      54,
+      401,
+      417,
+      480
+     ],
+     "aspect": 4.595,
+     "elongation": 6.168,
+     "axis_tilt_deg": 0.7,
+     "centroid_x": 0.3628,
+     "centroid_y": 0.9495,
+     "floor_proximity": 1.0,
+     "bottom_band_share": 0.333,
+     "speed_hps": 0.005494053989808703,
+     "vy_hps": 0.0016868534075484831,
+     "dt_s": 0.5,
+     "spans_gap": false,
+     "match_iou": 1.0
+    },
+    {
+     "t_s": 7.0,
+     "area_px": 16173,
+     "object_id": "0",
+     "box": [
+      54,
+      401,
+      417,
+      480
+     ],
+     "aspect": 4.595,
+     "elongation": 6.197,
+     "axis_tilt_deg": 0.6,
+     "centroid_x": 0.3631,
+     "centroid_y": 0.9496,
+     "floor_proximity": 1.0,
+     "bottom_band_share": 0.335,
+     "speed_hps": 0.000788287239102957,
+     "vy_hps": 0.00016956074413987388,
+     "dt_s": 0.5,
+     "spans_gap": false,
+     "match_iou": 1.0
+    },
+    {
+     "t_s": 7.5,
+     "area_px": 16281,
+     "object_id": "0",
+     "box": [
+      54,
+      402,
+      417,
+      480
+     ],
+     "aspect": 4.654,
+     "elongation": 6.157,
+     "axis_tilt_deg": 0.3,
+     "centroid_x": 0.362,
+     "centroid_y": 0.9488,
+     "floor_proximity": 1.0,
+     "bottom_band_share": 0.333,
+     "speed_hps": 0.0033015368712526008,
+     "vy_hps": -0.0015307239573822962,
+     "dt_s": 0.5,
+     "spans_gap": false,
+     "match_iou": 0.9873417721518988
+    },
+    {
+     "t_s": 8.0,
+     "area_px": 16180,
+     "object_id": "0",
+     "box": [
+      54,
+      402,
+      417,
+      480
+     ],
+     "aspect": 4.654,
+     "elongation": 6.204,
+     "axis_tilt_deg": 0.4,
+     "centroid_x": 0.3641,
+     "centroid_y": 0.9494,
+     "floor_proximity": 1.0,
+     "bottom_band_share": 0.335,
+     "speed_hps": 0.005790877204496411,
+     "vy_hps": 0.0012093336088814244,
+     "dt_s": 0.5,
+     "spans_gap": false,
+     "match_iou": 1.0
+    },
+    {
+     "t_s": 8.5,
+     "area_px": 16186,
+     "object_id": "0",
+     "box": [
+      54,
+      402,
+      417,
+      480
+     ],
+     "aspect": 4.654,
+     "elongation": 6.181,
+     "axis_tilt_deg": 0.4,
+     "centroid_x": 0.3642,
+     "centroid_y": 0.9493,
+     "floor_proximity": 1.0,
+     "bottom_band_share": 0.334,
+     "speed_hps": 0.00033581556707593373,
+     "vy_hps": -0.00020034577181182733,
+     "dt_s": 0.5,
+     "spans_gap": false,
+     "match_iou": 1.0
+    },
+    {
+     "t_s": 9.0,
+     "area_px": 16059,
+     "object_id": "0",
+     "box": [
+      54,
+      402,
+      417,
+      480
+     ],
+     "aspect": 4.654,
+     "elongation": 6.179,
+     "axis_tilt_deg": 0.4,
+     "centroid_x": 0.3636,
+     "centroid_y": 0.9495,
+     "floor_proximity": 1.0,
+     "bottom_band_share": 0.336,
+     "speed_hps": 0.0014754426082435625,
+     "vy_hps": 0.0004070408355156818,
+     "dt_s": 0.5,
+     "spans_gap": false,
+     "match_iou": 1.0
+    },
+    {
+     "t_s": 9.5,
+     "area_px": 16112,
+     "object_id": "0",
+     "box": [
+      54,
+      402,
+      417,
+      480
+     ],
+     "aspect": 4.654,
+     "elongation": 6.176,
+     "axis_tilt_deg": 0.3,
+     "centroid_x": 0.3641,
+     "centroid_y": 0.9494,
+     "floor_proximity": 1.0,
+     "bottom_band_share": 0.336,
+     "speed_hps": 0.0012925018889418667,
+     "vy_hps": -0.0002177099071627442,
+     "dt_s": 0.5,
+     "spans_gap": false,
+     "match_iou": 1.0
+    }
+   ]
+  },
+  {
+   "track_id": 1,
+   "frames": [
+    {
+     "t_s": 7.5,
+     "area_px": 2223,
+     "object_id": "1",
+     "box": [
+      571,
+      190,
+      617,
+      284
+     ],
+     "aspect": 0.489,
+     "elongation": 2.493,
+     "axis_tilt_deg": 85.9,
+     "centroid_x": 0.9318,
+     "centroid_y": 0.4824,
+     "floor_proximity": 0.5917,
+     "bottom_band_share": 0.144,
+     "speed_hps": null,
+     "vy_hps": null,
+     "dt_s": null,
+     "spans_gap": false,
+     "match_iou": null
+    }
+   ]
+  },
+  {
+   "track_id": 2,
+   "frames": [
+    {
+     "t_s": 8.0,
+     "area_px": 2031,
+     "object_id": "1",
+     "box": [
+      527,
+      152,
+      566,
+      229
+     ],
+     "aspect": 0.506,
+     "elongation": 2.126,
+     "axis_tilt_deg": 86.9,
+     "centroid_x": 0.8549,
+     "centroid_y": 0.4125,
+     "floor_proximity": 0.4771,
+     "bottom_band_share": 0.264,
+     "speed_hps": null,
+     "vy_hps": null,
+     "dt_s": null,
+     "spans_gap": false,
+     "match_iou": null
+    }
+   ]
+  },
+  {
+   "track_id": 3,
+   "frames": [
+    {
+     "t_s": 8.5,
+     "area_px": 2080,
+     "object_id": "1",
+     "box": [
+      490,
+      151,
+      526,
+      230
+     ],
+     "aspect": 0.456,
+     "elongation": 2.503,
+     "axis_tilt_deg": 80.8,
+     "centroid_x": 0.7901,
+     "centroid_y": 0.4094,
+     "floor_proximity": 0.4792,
+     "bottom_band_share": 0.235,
+     "speed_hps": null,
+     "vy_hps": null,
+     "dt_s": null,
+     "spans_gap": false,
+     "match_iou": null
+    }
+   ]
+  },
+  {
+   "track_id": 4,
+   "frames": [
+    {
+     "t_s": 9.0,
+     "area_px": 2363,
+     "object_id": "1",
+     "box": [
+      432,
+      150,
+      483,
+      232
+     ],
+     "aspect": 0.622,
+     "elongation": 2.161,
+     "axis_tilt_deg": 81.0,
+     "centroid_x": 0.7196,
+     "centroid_y": 0.4119,
+     "floor_proximity": 0.4833,
+     "bottom_band_share": 0.245,
+     "speed_hps": null,
+     "vy_hps": null,
+     "dt_s": null,
+     "spans_gap": false,
+     "match_iou": null
+    },
+    {
+     "t_s": 9.5,
+     "area_px": 2703,
+     "object_id": "1",
+     "box": [
+      410,
+      151,
+      458,
+      240
+     ],
+     "aspect": 0.539,
+     "elongation": 2.197,
+     "axis_tilt_deg": 75.0,
+     "centroid_x": 0.6808,
+     "centroid_y": 0.4174,
+     "floor_proximity": 0.5,
+     "bottom_band_share": 0.186,
+     "speed_hps": 0.10408658610470324,
+     "vy_hps": 0.010960543440940884,
+     "dt_s": 0.5,
+     "spans_gap": false,
+     "match_iou": 0.33175803402646503
+    }
+   ]
+  }
+ ],
+ "recorded_rules": {
+  "label": "fall_candidate",
+  "reasons": [
+   "all four phases satisfied",
+   "best of 2 descent windows on this track",
+   "verdict from track 0 of 2 evaluated tracks"
+  ],
+  "phases": {
+   "descent": {
+    "satisfied": true,
+    "detail": {
+     "onset_s": 4.83,
+     "offset_s": 5.13,
+     "duration_s": 0.3,
+     "source": "local",
+     "admitted_on_slack": false,
+     "run_onset_s": 4.83
+    }
+   },
+   "pre_posture": {
+    "satisfied": true,
+    "detail": {
+     "postures": [
+      "upright",
+      "upright",
+      "upright",
+      "upright",
+      "upright",
+      "upright",
+      "ambiguous",
+      "horizontal"
+     ]
+    }
+   },
+   "post_posture": {
+    "satisfied": true,
+    "detail": {
+     "postures": [
+      "horizontal",
+      "horizontal",
+      "horizontal",
+      "horizontal",
+      "horizontal",
+      "horizontal",
+      "horizontal",
+      "horizontal",
+      "horizontal"
+     ]
+    }
+   },
+   "stillness": {
+    "satisfied": true,
+    "detail": {
+     "displacement_h": 0.0091
+    }
+   }
+  }
+ },
+ "recorded_outcome": "fall_candidate",
+ "recorded_adjudication_dev_full_arm": {
+  "evidence_form": "none",
+  "images": 0,
+  "usable": true,
+  "verdict": "uncertain",
+  "confidence": 0.55,
+  "error": null,
+  "discriminator": "Abruptness of the descent itself to separate uncontrolled fall from controlled lie-down: core duration 0.30s suggests abrupt but full envelope 1.63s and 0.5s keyframe sampling smear the speed/tilt-rate profile and peak changed-area is only 0.07, leaving uncontrolled vs controlled nature ambiguous and missing.",
+  "usage": {
+   "completion_tokens": 4064,
+   "prompt_tokens": 1301,
+   "total_tokens": 5365,
+   "completion_tokens_details": {
+    "reasoning_tokens": 3642
+   },
+   "prompt_tokens_details": {
+    "cached_tokens": 0
+   }
+  }
+ },
+ "note": "The adjudication block is the DEV GATE full arm's recorded output (Muse Spark, traces form). It is not part of the shipped configuration: after the D1 FAIL, Spark is out of the disposition path. It is kept here because this clip's pinned SAM output comes from that scored run.",
+ "timing_intervals_pinned": [
+  {
+   "onset_s": 3.17,
+   "offset_s": 4.8,
+   "duration_s": 1.63,
+   "core_onset_s": 3.17,
+   "core_offset_s": 3.47,
+   "peak_area_frac": 0.07,
+   "role": "descent (strongest interval; the record's timing_descent)"
+  },
+  {
+   "onset_s": 4.83,
+   "offset_s": 5.13,
+   "duration_s": 0.3,
+   "core_onset_s": 4.83,
+   "core_offset_s": 5.13,
+   "peak_area_frac": 0.0,
+   "role": "second interval; its core is the rules verdict's winning window, recorded in recorded_rules.phases.descent"
+  }
+ ],
+ "timing_reconstruction_note": "The harness record stores the descent interval's run onset/duration and core duration, not every interval's core onset. Interval 1's core onset is pinned to its run onset; the live rules verdict is insensitive to that choice across the core's whole plausible range (verified 2026-10-29: every core onset from 3.17 s to 4.17 s reproduces the recorded verdict, winning window, and reasons exactly). peak_energy / peak_vy / net_centroid_drop are diagnostics the rules never gate on and are set to 0 in the replay."
+}

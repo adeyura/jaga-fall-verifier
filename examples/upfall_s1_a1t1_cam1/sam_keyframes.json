@@ -1,0 +1,476 @@
+{
+ "clip_id": "Subject1Activity1Trial1_Camera1.zip",
+ "event": "upfall:S1:A1:T1",
+ "dataset_label": "fall",
+ "camera": "camera1",
+ "view": "side",
+ "frame_w": 640,
+ "frame_h": 480,
+ "model": "sam-3.1",
+ "prompt": "person",
+ "segment": {
+  "start_s": 1.0,
+  "end_s": 9.6
+ },
+ "provenance": "Parsed SAM 3.1 responses exactly as consumed by the scored D1 dev gate run (config 6d7c03257b12ab00), exported from the per-clip record cache/gate_d1/main/Subject1Activity1Trial1_Camera1.zip.json. centroid and floor_proximity are the run's own recorded per-track values, carried so the mask-local centroid and bottom row can be reconstructed exactly.",
+ "keyframes": [
+  {
+   "t_s": 1.0,
+   "instances": [
+    {
+     "object_id": "0",
+     "box": [
+      406,
+      173,
+      492,
+      480
+     ],
+     "area_px": 18148,
+     "elongation": 4.244,
+     "axis_tilt_deg": 85.9,
+     "bottom_band_share": 0.156,
+     "centroid_x": 0.7044,
+     "centroid_y": 0.6754,
+     "floor_proximity": 1.0
+    }
+   ]
+  },
+  {
+   "t_s": 1.5,
+   "instances": [
+    {
+     "object_id": "0",
+     "box": [
+      405,
+      173,
+      492,
+      480
+     ],
+     "area_px": 18252,
+     "elongation": 4.171,
+     "axis_tilt_deg": 85.7,
+     "bottom_band_share": 0.156,
+     "centroid_x": 0.7037,
+     "centroid_y": 0.676,
+     "floor_proximity": 1.0
+    }
+   ]
+  },
+  {
+   "t_s": 2.0,
+   "instances": [
+    {
+     "object_id": "0",
+     "box": [
+      402,
+      174,
+      488,
+      480
+     ],
+     "area_px": 17909,
+     "elongation": 4.338,
+     "axis_tilt_deg": 85.1,
+     "bottom_band_share": 0.158,
+     "centroid_x": 0.7003,
+     "centroid_y": 0.6762,
+     "floor_proximity": 1.0
+    }
+   ]
+  },
+  {
+   "t_s": 2.5,
+   "instances": [
+    {
+     "object_id": "0",
+     "box": [
+      382,
+      174,
+      484,
+      480
+     ],
+     "area_px": 18213,
+     "elongation": 3.921,
+     "axis_tilt_deg": 84.7,
+     "bottom_band_share": 0.149,
+     "centroid_x": 0.692,
+     "centroid_y": 0.6762,
+     "floor_proximity": 1.0
+    }
+   ]
+  },
+  {
+   "t_s": 3.0,
+   "instances": [
+    {
+     "object_id": "0",
+     "box": [
+      379,
+      175,
+      479,
+      480
+     ],
+     "area_px": 18470,
+     "elongation": 3.91,
+     "axis_tilt_deg": 83.4,
+     "bottom_band_share": 0.151,
+     "centroid_x": 0.6858,
+     "centroid_y": 0.6771,
+     "floor_proximity": 1.0
+    }
+   ]
+  },
+  {
+   "t_s": 3.5,
+   "instances": [
+    {
+     "object_id": "0",
+     "box": [
+      264,
+      187,
+      474,
+      480
+     ],
+     "area_px": 20346,
+     "elongation": 2.107,
+     "axis_tilt_deg": 66.2,
+     "bottom_band_share": 0.11,
+     "centroid_x": 0.6125,
+     "centroid_y": 0.6724,
+     "floor_proximity": 1.0
+    }
+   ]
+  },
+  {
+   "t_s": 4.0,
+   "instances": [
+    {
+     "object_id": "0",
+     "box": [
+      159,
+      264,
+      462,
+      480
+     ],
+     "area_px": 21831,
+     "elongation": 1.815,
+     "axis_tilt_deg": 39.7,
+     "bottom_band_share": 0.249,
+     "centroid_x": 0.4751,
+     "centroid_y": 0.8009,
+     "floor_proximity": 1.0
+    }
+   ]
+  },
+  {
+   "t_s": 4.5,
+   "instances": [
+    {
+     "object_id": "0",
+     "box": [
+      51,
+      339,
+      408,
+      480
+     ],
+     "area_px": 18734,
+     "elongation": 3.534,
+     "axis_tilt_deg": 11.3,
+     "bottom_band_share": 0.417,
+     "centroid_x": 0.3664,
+     "centroid_y": 0.9144,
+     "floor_proximity": 1.0
+    }
+   ]
+  },
+  {
+   "t_s": 5.0,
+   "instances": [
+    {
+     "object_id": "0",
+     "box": [
+      53,
+      400,
+      419,
+      480
+     ],
+     "area_px": 17708,
+     "elongation": 5.507,
+     "axis_tilt_deg": 1.0,
+     "bottom_band_share": 0.325,
+     "centroid_x": 0.3614,
+     "centroid_y": 0.9419,
+     "floor_proximity": 1.0
+    }
+   ]
+  },
+  {
+   "t_s": 5.5,
+   "instances": [
+    {
+     "object_id": "0",
+     "box": [
+      52,
+      400,
+      421,
+      480
+     ],
+     "area_px": 17437,
+     "elongation": 6.068,
+     "axis_tilt_deg": 0.4,
+     "bottom_band_share": 0.335,
+     "centroid_x": 0.3684,
+     "centroid_y": 0.9458,
+     "floor_proximity": 1.0
+    }
+   ]
+  },
+  {
+   "t_s": 6.0,
+   "instances": [
+    {
+     "object_id": "0",
+     "box": [
+      54,
+      401,
+      417,
+      480
+     ],
+     "area_px": 16424,
+     "elongation": 6.152,
+     "axis_tilt_deg": 0.4,
+     "bottom_band_share": 0.33,
+     "centroid_x": 0.3647,
+     "centroid_y": 0.9486,
+     "floor_proximity": 1.0
+    }
+   ]
+  },
+  {
+   "t_s": 6.5,
+   "instances": [
+    {
+     "object_id": "0",
+     "box": [
+      54,
+      401,
+      417,
+      480
+     ],
+     "area_px": 16230,
+     "elongation": 6.168,
+     "axis_tilt_deg": 0.7,
+     "bottom_band_share": 0.333,
+     "centroid_x": 0.3628,
+     "centroid_y": 0.9495,
+     "floor_proximity": 1.0
+    }
+   ]
+  },
+  {
+   "t_s": 7.0,
+   "instances": [
+    {
+     "object_id": "0",
+     "box": [
+      54,
+      401,
+      417,
+      480
+     ],
+     "area_px": 16173,
+     "elongation": 6.197,
+     "axis_tilt_deg": 0.6,
+     "bottom_band_share": 0.335,
+     "centroid_x": 0.3631,
+     "centroid_y": 0.9496,
+     "floor_proximity": 1.0
+    }
+   ]
+  },
+  {
+   "t_s": 7.5,
+   "instances": [
+    {
+     "object_id": "0",
+     "box": [
+      54,
+      402,
+      417,
+      480
+     ],
+     "area_px": 16281,
+     "elongation": 6.157,
+     "axis_tilt_deg": 0.3,
+     "bottom_band_share": 0.333,
+     "centroid_x": 0.362,
+     "centroid_y": 0.9488,
+     "floor_proximity": 1.0
+    },
+    {
+     "object_id": "1",
+     "box": [
+      571,
+      190,
+      617,
+      284
+     ],
+     "area_px": 2223,
+     "elongation": 2.493,
+     "axis_tilt_deg": 85.9,
+     "bottom_band_share": 0.144,
+     "centroid_x": 0.9318,
+     "centroid_y": 0.4824,
+     "floor_proximity": 0.5917
+    }
+   ]
+  },
+  {
+   "t_s": 8.0,
+   "instances": [
+    {
+     "object_id": "0",
+     "box": [
+      54,
+      402,
+      417,
+      480
+     ],
+     "area_px": 16180,
+     "elongation": 6.204,
+     "axis_tilt_deg": 0.4,
+     "bottom_band_share": 0.335,
+     "centroid_x": 0.3641,
+     "centroid_y": 0.9494,
+     "floor_proximity": 1.0
+    },
+    {
+     "object_id": "1",
+     "box": [
+      527,
+      152,
+      566,
+      229
+     ],
+     "area_px": 2031,
+     "elongation": 2.126,
+     "axis_tilt_deg": 86.9,
+     "bottom_band_share": 0.264,
+     "centroid_x": 0.8549,
+     "centroid_y": 0.4125,
+     "floor_proximity": 0.4771
+    }
+   ]
+  },
+  {
+   "t_s": 8.5,
+   "instances": [
+    {
+     "object_id": "0",
+     "box": [
+      54,
+      402,
+      417,
+      480
+     ],
+     "area_px": 16186,
+     "elongation": 6.181,
+     "axis_tilt_deg": 0.4,
+     "bottom_band_share": 0.334,
+     "centroid_x": 0.3642,
+     "centroid_y": 0.9493,
+     "floor_proximity": 1.0
+    },
+    {
+     "object_id": "1",
+     "box": [
+      490,
+      151,
+      526,
+      230
+     ],
+     "area_px": 2080,
+     "elongation": 2.503,
+     "axis_tilt_deg": 80.8,
+     "bottom_band_share": 0.235,
+     "centroid_x": 0.7901,
+     "centroid_y": 0.4094,
+     "floor_proximity": 0.4792
+    }
+   ]
+  },
+  {
+   "t_s": 9.0,
+   "instances": [
+    {
+     "object_id": "0",
+     "box": [
+      54,
+      402,
+      417,
+      480
+     ],
+     "area_px": 16059,
+     "elongation": 6.179,
+     "axis_tilt_deg": 0.4,
+     "bottom_band_share": 0.336,
+     "centroid_x": 0.3636,
+     "centroid_y": 0.9495,
+     "floor_proximity": 1.0
+    },
+    {
+     "object_id": "1",
+     "box": [
+      432,
+      150,
+      483,
+      232
+     ],
+     "area_px": 2363,
+     "elongation": 2.161,
+     "axis_tilt_deg": 81.0,
+     "bottom_band_share": 0.245,
+     "centroid_x": 0.7196,
+     "centroid_y": 0.4119,
+     "floor_proximity": 0.4833
+    }
+   ]
+  },
+  {
+   "t_s": 9.5,
+   "instances": [
+    {
+     "object_id": "0",
+     "box": [
+      54,
+      402,
+      417,
+      480
+     ],
+     "area_px": 16112,
+     "elongation": 6.176,
+     "axis_tilt_deg": 0.3,
+     "bottom_band_share": 0.336,
+     "centroid_x": 0.3641,
+     "centroid_y": 0.9494,
+     "floor_proximity": 1.0
+    },
+    {
+     "object_id": "1",
+     "box": [
+      410,
+      151,
+      458,
+      240
+     ],
+     "area_px": 2703,
+     "elongation": 2.197,
+     "axis_tilt_deg": 75.0,
+     "bottom_band_share": 0.186,
+     "centroid_x": 0.6808,
+     "centroid_y": 0.4174,
+     "floor_proximity": 0.5
+    }
+   ]
+  }
+ ]
+}

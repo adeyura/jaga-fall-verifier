@@ -1,0 +1,48 @@
+=== Jaga offline example: Subject1Activity1Trial1_Camera1.zip (event upfall:S1:A1:T1, label: fall) ===
+SAM model sam-3.1, prompt 'person', 640x480, segment 1.0-9.6 s (segment bounds replayed from the scored run's motion-gate record)
+Gate record (replayed): 1 segment(s), 8.6 s flagged
+
+[features] 23 instances -> 5 tracks (3 single-keyframe)
+[verify] track features: 23 frames compared, max drift vs recorded = 0.0005 (record rounding is 4 decimals)
+[timing] intervals replayed from record: core 3.17-3.47 s, core 4.83-5.13 s
+
+[rules] LIVE verdict: fall_candidate
+        - all four phases satisfied
+        - best of 2 descent windows on this track
+        - verdict from track 0 of 2 evaluated tracks
+[verify] recorded verdict was 'fall_candidate': MATCH
+
+[traces] evidence form (D3, traces only), generated live:
+Clip: Subject1Activity1Trial1_Camera1.zip (public fall-dataset clip, staged, lab room)
+Camera view: side.
+Local dense timing: descent onset 3.17s, core duration 0.30s (the descent itself; full envelope run 1.63s), peak changed-area 0.07.
+Rules stage verdict: fall_candidate (timing source: local)
+  phase descent: satisfied=True {'onset_s': 4.83, 'offset_s': 5.13, 'duration_s': 0.3, 'source': 'local', 'admitted_on_slack': False, 'run_onset_s': 4.83}
+  phase pre_posture: satisfied=True {'postures': ['upright', 'upright', 'upright', 'upright', 'upright', 'upright', 'ambiguous', 'horizontal']}
+  phase post_posture: satisfied=True {'postures': ['horizontal', 'horizontal', 'horizontal', 'horizontal', 'horizontal', 'horizontal', 'horizontal', 'horizontal', 'horizontal']}
+  phase stillness: satisfied=True {'displacement_h': 0.009}
+Primary track keyframes (t, axis tilt deg, elongation, mask area px, floor proximity, base-band share, speed):
+  1.0s tilt=86 elong=4.244 area=18148 floor=1.00 band=0.16 speed=None
+  1.5s tilt=86 elong=4.171 area=18252 floor=1.00 band=0.16 speed=0.002
+  2.0s tilt=85 elong=4.338 area=17909 floor=1.00 band=0.16 speed=0.009
+  2.5s tilt=85 elong=3.921 area=18213 floor=1.00 band=0.15 speed=0.022
+  3.0s tilt=83 elong=3.91 area=18470 floor=1.00 band=0.15 speed=0.017
+  3.5s tilt=66 elong=2.107 area=20346 floor=1.00 band=0.11 speed=0.196
+  4.0s tilt=40 elong=1.815 area=21831 floor=1.00 band=0.25 speed=0.448
+  4.5s tilt=11 elong=3.534 area=18734 floor=1.00 band=0.42 speed=0.368
+  5.0s tilt=1 elong=5.507 area=17708 floor=1.00 band=0.33 speed=0.057
+  5.5s tilt=0 elong=6.068 area=17437 floor=1.00 band=0.34 speed=0.02
+  6.0s tilt=0 elong=6.152 area=16424 floor=1.00 band=0.33 speed=0.011
+  6.5s tilt=1 elong=6.168 area=16230 floor=1.00 band=0.33 speed=0.005
+  7.0s tilt=1 elong=6.197 area=16173 floor=1.00 band=0.34 speed=0.001
+  7.5s tilt=0 elong=6.157 area=16281 floor=1.00 band=0.33 speed=0.003
+  8.0s tilt=0 elong=6.204 area=16180 floor=1.00 band=0.34 speed=0.006
+  8.5s tilt=0 elong=6.181 area=16186 floor=1.00 band=0.33 speed=0.0
+  9.0s tilt=0 elong=6.179 area=16059 floor=1.00 band=0.34 speed=0.002
+  9.5s tilt=0 elong=6.176 area=16112 floor=1.00 band=0.34 speed=0.001
+SAM keyframes: 18, empty: 0, tracks: {'tracks_total': 5, 'single_keyframe_tracks': 3, 'instances_total': 23, 'instances_matched': 18, 'instances_new_tracks': 5, 'points_spanning_gap': 0, 'iou_threshold': 0.2, 'max_missed_keyframes': 1}
+[alerts] shipped configuration -> tier 'urgent' (rules fall candidate not cleared by the adjudicator)
+
+[recorded, not live] dev gate full arm adjudication: verdict 'uncertain' at confidence 0.55 (usable: True). In the dev gate this escalated the event; in the shipped configuration there is no adjudicator and the rules verdict above stands on its own.
+
+=== replay OK: live downstream verdict == recorded verdict == 'fall_candidate' ===
