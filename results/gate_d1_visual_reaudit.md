@@ -20,7 +20,7 @@ no scores change, no labels were edited.
     48–80): man walks to a pre-positioned patterned crash mat, pitches forward at
     ~2.0 s, is fully prone on the mat by ~2.5 s (descent breaks briefly on hands/knee),
     then lies motionless to the end. This is the dataset's fall signature.
-  - Known ADL, UP-Fall Subject1 Activity11 Trial1 Camera1 ("laying down"): the actor
+  - Known ADL, UP-Fall Subject1 Activity11 Trial1 Camera1: the actor
     lies supine and essentially motionless on a mat for the entire ~59 s clip.
     Prolonged motionless lying therefore occurs in genuine ADL too, so stillness alone
     was NOT used as the fall criterion; the decisive feature in every judgment below

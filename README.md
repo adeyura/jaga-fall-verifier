@@ -55,7 +55,9 @@ single component.
    the motion signal, on a fixed 30.0 fps analysis series (config
    TIMING, decode_fps = 30.0). The source clips run at 18 fps
    (UP-Fall) and 25 fps (Le2i), and timing is never derived from the
-   2 fps segmentation keyframes. A frozen rules state machine
+   2 fps segmentation keyframes. Timing features are expressed in
+   decoder time under a fixed 30 fps assumption; native source frame
+   rates were not used to rescale them. A frozen rules state machine
    (upright → rapid descent → horizontal → stillness, with a safeguard
    that escalates ambiguous evidence instead of clearing it) issues
    the verdict.
@@ -158,8 +160,9 @@ events), it met all four criteria. Result:
 
 **Verdict: FAIL.** The pivot to the rules-primary configuration above
 was executed on that verdict, without renegotiating the rule, and the
-verdict stands as recorded. Both arms reached a human on 71/99 fall
-events (recall 0.717 [0.622, 0.796]); rules-only precision was 0.867,
+verdict stands as recorded. Both arms routed 71/99 fall events to a
+human (confirmed or escalated) (recall 0.717 [0.622, 0.796]);
+rules-only precision was 0.867,
 the full arm's 0.852. For scale: a crude aspect-ratio baseline calls
 89/99 falls and 87/92 everyday activities "fall"; Spark alone,
 without the pipeline, confirms 49/99 falls with 7 false alarms.
@@ -190,6 +193,11 @@ criterion 2.** The adjudicator had to prove benefit. Indeterminate
 means unproven; unproven means removed. The full run record is
 `results/gate_d1_dev_summary.md`; the per-event results are
 `results/gate_d1_dev_results.csv`.
+
+In plain terms: the test was run fairly and the component failed
+it. Two dataset subsets turned out to have no labels, so that one
+criterion cannot be re-judged either way, and the component stays
+out because the burden of proof was on it.
 
 ### Dataset audit: Le2i label provenance (post-hoc, dev only)
 
@@ -234,13 +242,29 @@ not contain the affected stratum: its Le2i half is the annotated
 Coffee_room_02, and its UP-Fall labels come from the recording
 protocol's activity IDs.
 
+Label provenance, in one place: the gate's dev labels for the
+Lecture_room and Office subsets rest on archives that ship zero
+annotation files, so those everyday-activity labels were inferred
+from room role, and all 4 of the gate's counted false alarms come
+from those subsets and are label-doubtful (the audit found staged
+falls in all 4). The confirmation run's Le2i half, Coffee_room_02,
+is not one of the zero-annotation subsets: its archive ships
+per-video annotation files, and the clip manifest
+(`results/le2i_manifest.csv`) ties each clip to its annotation
+file. The frozen test was run once, with no tuning; nothing in it
+was used to revise the pipeline after the run.
+
 ### Confirmation run (frozen test split, one run, shipped configuration)
 
 68 clips / 44 events: UP-Fall Subject 2 plus the Le2i Coffee_room_02
 holdout, run once under the same config hash
-(`6d7c03257b12ab00`), no tuning:
+(`6d7c03257b12ab00`), no tuning. The 68 clips are the 44 scored
+events: UP-Fall Subject 2 contributes 48 clips as 24 events (a
+trial's two camera views count as one event), and Coffee_room_02
+contributes 20 clips as 20 events. Every interval in this section
+treats the event, not the clip, as the independent unit:
 
-| Stratum | Falls reached a human | False alarms | Precision | Escalation |
+| Stratum | Falls routed to a human (confirmed or escalated) | False alarms | Definitive-alert precision | Escalation |
 |---|---|---|---|---|
 | Overall (44 events) | 19/27 = 0.704 [0.515, 0.841] | 0/17 | 7/7 = 1.000 [0.646, 1.000] | 24/44 = 0.545 [0.401, 0.683] |
 | UP-Fall Subject 2 | 11/15 = 0.733 [0.480, 0.891] | 0/9 | 5/5 = 1.000 [0.566, 1.000] | 11/24 = 0.458 |
@@ -250,21 +274,26 @@ Of the 27 falls: 7 confirmed, 12 escalated, 8 cleared; none was lost
 at the motion gate (gate recall 42/42 = 1.000). The burden side of
 the same run: of the 17 everyday-activity events, 0 were confirmed
 as falls, 12 were escalated to a human check, 4 were cleared, and 1
-was missed at the motion gate. "Reached a human" therefore covers 19
-falls and 12 non-falls alike; the escalation count is the workload,
-and it is stated with the result, not under it. False alarms: 0
-across the 17 everyday-activity events (0.18 hours of event
-footage), which is 0.00 per hour on this event stream. With zero
-observed, the 95% upper bound is roughly 18% per event. Read the
-per-hour figure as relative to pre-segmented event clips, not to
-continuous monitoring. SAM: 1,524 keyframes, 14 empty (0.9%), $3.72
-of API spend. Full record: `results/confirmation_summary.md` and
+was missed at the motion gate. "Routed to a human" therefore covers
+19 falls and 12 non-falls alike; the escalation count is the
+workload, and it is stated with the result, not under it.
+Definitive-alert precision was 7/7 (95% CI 0.646–1.000), against 24
+of 44 events escalated for human review. False alarms: 0 definitive
+false-positive confirmations in 0.18 h of ADL clips (exact Poisson
+95% CI for the rate: 0–20.5/h; the exposure is far too short to
+estimate an operational false-alarm rate). With zero observed across
+the 17 everyday-activity events, the 95% upper bound is roughly 18%
+per event. SAM: 1,524 keyframes, 14 empty (0.9%), $3.72 of API
+spend. Full record: `results/confirmation_summary.md` and
 `results/confirmation_results.csv`.
 
-A post-submission replication on the sealed UP-Fall subjects is
-pre-registered in `results/replication_addendum.md`, hash-committed
-before submission; its results will be published there regardless of
-outcome.
+After the submission, a replication set held aside (UP-Fall
+Subjects 3, 4, and 5, in neither split) will be run once with the
+frozen pipeline and published whatever the result. The
+pre-registration is `results/replication_addendum.md`, with its
+file hashes published in advance in
+`results/sealed_files_manifest.sha256`. The seal is a commitment
+device, not verifiable proof.
 
 ### Limitations, beside the numbers
 
@@ -443,8 +472,9 @@ scripts, manifests, and checksums only.
 - **Privacy, stated precisely:** in the design, only candidate-event
   keyframes leave the home for segmentation; continuous footage does
   not, and no video is archived. The prototype harness's local
-  cache is disclosed under The shipped system. This prototype
-  processed public dataset clips only.
+  cache is disclosed under The shipped system. No video is stored
+  by Jaga; event keyframes are processed by the hosted SAM 3.1 API.
+  This prototype processed public dataset clips only.
 
 ## License
 

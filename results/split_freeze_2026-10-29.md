@@ -152,8 +152,8 @@ every source column:
    counts (30 fall files / 18 ADL files per subject), but it is a
    derivation, documented here, not a manifest fact.
 2. **Activity 8 vs 9 naming is unverified.** The downloader's
-   docstring names the hard negatives as 8 (picking up an object),
-   9 (sitting down), 11 (laying down). Nothing in the manifests
+   docstring originally named the hard negatives 8, 9, and 11 with
+   English labels (removed 2026-11-01; numeric IDs only). Nothing in the manifests
    confirms the 8/9 name assignment against the dataset paper
    (Martínez-Villaseñor et al., Sensors 2019). The class split
    (fall vs ADL) is unaffected, but the 8/9 names must be verified

@@ -32,7 +32,8 @@ Assumed, and exercised by the first live run:
   reset: a successful end-to-end zip download through the confirm hop.
 
 Jaga selection (SPEC.md): falls are activities 1-5; hard negatives are
-8 (picking up an object), 9 (sitting down), 11 (laying down). Two
+activities 8, 9, 11 (numeric IDs only: the English activity names are
+unverified against the 2019 dataset paper). Two
 camera views of one event count as ONE sample; both are downloaded.
 
 Design rules (SPEC.md, DECISIONS.md), mirroring download_ur_fall.py:
