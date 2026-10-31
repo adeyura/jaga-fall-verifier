@@ -27,8 +27,8 @@ motion gate -> SAM 3.1 evidence -> timing / features -> rules -> alert ladder
 To our knowledge, Jaga is the first published fall-verification
 system to use SAM segmentation at inference time as an interpretable
 evidence layer. The claim is narrow, and it is not a claim to be the
-first fall detector or the first verified alert (the field note
-after Evaluation names systems that verify alerts today). What is
+first fall detector or the first verified alert (systems that
+verify alerts already exist). What is
 claimed is the composition: verification as the primary design
 object, in a private home, with explicit rules over segmentation
 evidence, a family responder, an open method, and a published,
