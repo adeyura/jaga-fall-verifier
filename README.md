@@ -295,6 +295,67 @@ file hashes published in advance in
 `results/sealed_files_manifest.sha256`. The seal is a commitment
 device, not verifiable proof.
 
+### Supplementary analysis, post-hoc (2026-11-01): removing the SAM channels on the development set
+
+This subsection reports a post-hoc supplementary analysis, defined
+and run on 2026-11-01, after the confirmation run. It is not
+pre-registered, and it is not a confirmation result. It was run on
+the dev split, which is the design and tuning set, so absolute dev
+numbers are optimistic for both arms; only the within-dev
+comparison is informative. The D1 gate above could not measure the
+effect of the SAM channels: it compared rules+SAM against
+rules+SAM+LLM, so SAM evidence was present in both arms. This
+analysis asks what changes when the SAM channels are removed.
+
+The no-SAM arm uses identical rules, thresholds, timing, and
+scoring. The SAM-derived phases (pre/post posture, keyframe-fallback
+descent) are treated as evidence-absent, because no motion-signal
+equivalent exists; stillness is replaced by a motion-signal
+equivalent. Note what the arm removes: not SAM segmentation
+evidence alone, but SAM-derived evidence together with the
+SAM-dependent track logic in this pipeline (track-span windows and
+the multi-track verdict merge); every delta below is attributable
+to that bundle. The full definition, the stillness amendment,
+per-event dispositions, and the joined comparison are preserved in
+`results/sam_ablation_dev_2026-11-01/`.
+
+What is robust across all three motion-stillness readings (v1, the
+definition as originally written; v2a, isolating a window-anchor
+correction; v2, the arm of record):
+
+- Falls confirmed fall 26/99 → 0 under every reading. That is by
+  construction: confirmation requires both SAM posture phases, and
+  the no-SAM arm has none. Read it as what confirmation costs, not
+  as a tuning result.
+- The shipped joint operating point is unreachable under every
+  motion-only operationalization tried. The shipped arm holds falls
+  not-missed at 0.717 while clearing 36/92 everyday-activity
+  events. The motion readings either clear most falls (not-missed
+  0.222 under v1, 0.303 under v2a) or escalate essentially
+  everything (0.990 under v2, with 92/92 everyday-activity events
+  escalated). Falls not-missed and the escalation margin swing with
+  the stillness construction, so they are reported only as that
+  three-reading range, never as a single point.
+- ADL false alarms (confirmed) fall 4/92 → 0 in all readings, with
+  the trade-off stated beside it: the shipped arm clears 36/92
+  everyday-activity events; the motion readings clear 70 (v1), 64
+  (v2a), or 0 (v2).
+
+By the shipped rules' structure, the only veto available on a slow
+descent is the SAM posture phase, and the only stillness test reads
+the SAM mask centroid; the attribution of the shipped clearances to
+those channels is design inference from the rule structure, not a
+tabulated finding of this comparison, whose tables count outcomes,
+not phases. One event is traced end to end in the package
+(`worked_example.md` in the directory above): a Le2i
+Coffee_room_01 fall where both arms find the identical 0.57 s
+motion descent window; without both SAM posture phases the event
+caps at uncertain and escalates, and with them it confirms.
+
+The frozen test was not touched by this analysis, and no headline
+number changes. Zero SAM calls were made: the shipped side is the
+gate's recorded output.
+
 ### Limitations, beside the numbers
 
 - The falls in these datasets are staged, performed by young actors
