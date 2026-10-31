@@ -8,6 +8,11 @@
 # a clip manifest, and checksums. No media files, ever.
 data/
 board_assets/
+
+# Demo production — the video script and assets stay local by the
+# author's decision; the final video ships via the submission page
+# only, never through this repo.
+demo/
 *.mp4
 *.avi
 *.mov
