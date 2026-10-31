@@ -89,6 +89,13 @@ RULES = {
 # pre-descent phase is unobservable by construction (the subject
 # enters and falls within about half a second), so the rules cap at
 # uncertain in this view and the adjudicator decides from frames.
+# Amendment 2026-11-01 (comment only; no value in this file changed
+# and the config hash was re-verified unchanged): the sentence above
+# is the 2026-10-27 derivation note, in the present tense of that
+# design. The adjudicator was removed from the disposition path by
+# the 2026-10-29 D1 gate decision; in the shipped configuration no
+# adjudicator decides anything, and the rules' uncertain cap in this
+# view is the outcome that escalates to a human check.
 # Ceiling window values were set 2026-10-27 from the full UR Fall
 # cam1 diagnostics distribution on the RGB-half signal (n=27 falls
 # with a detected descent of 30; cores 0.17-1.27 s, median 0.57,
