@@ -32,6 +32,19 @@ record, with dev numbers and strata, is under
 | Confirmed false alarms | **0** across 17 everyday-activity events (0 definitive false-positive confirmations in 0.18 h of ADL clips; exact Poisson 95% CI for the rate 0–20.5/h) |
 | The experiment that failed | The pre-registered gate for the Muse Spark adjudicator **failed**, and the component was removed; reported in full under Evaluation |
 
+![SAM 3.1 mask overlays for one dev-set fall event: the person upright before the descent (left) and horizontal after it (right)](docs/assets/sam_mask_worked_example.png)
+
+*The evidence the rules read, for one dev-set event
+(`le2i_coffee-room-01_video-02`, a staged fall from the public Le2i
+dataset — the performer is a dataset volunteer, not family). Left:
+keyframe at 7.0 s, before the descent; the mask's axis tilt reads
+85°, upright. Right: keyframe at 9.0 s, after the descent; the same
+person's mask reads 33.5°, horizontal. Both panels are rendered by
+the shipped overlay code (`src/jaga/overlays.py`) from the SAM 3.1
+output recorded for this event in the dev-set gate run, over the
+pipeline's privacy-blurred background. Full trace:
+[the worked example](results/sam_ablation_dev_2026-11-01/worked_example.md).*
+
 ## The shipped system
 
 ```
