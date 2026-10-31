@@ -1,0 +1,177 @@
+{
+ "clip_id": "le2i_coffee-room-01_video-02",
+ "event_id": "le2i_coffee-room-01_video-02",
+ "dataset": "le2i",
+ "label": "fall",
+ "duration_s": 12.24,
+ "n_segments": 1,
+ "timing": {
+  "floor": 0.005648,
+  "p95": 0.034896,
+  "low_level": 0.011498,
+  "n_intervals": 3
+ },
+ "segments": [
+  {
+   "start_s": 0.0,
+   "end_s": 12.24,
+   "labels": {
+    "v1": "negative",
+    "v2a": "negative",
+    "v2": "uncertain"
+   },
+   "branch": "windowed",
+   "windows": [
+    {
+     "onset_s": 0.0,
+     "offset_s": 0.07,
+     "run_onset_s": 0.0,
+     "run_offset_s": 0.07,
+     "duration_s": 0.07,
+     "descent_satisfied": false,
+     "stillness": {
+      "v1": false,
+      "v2a": false,
+      "v2": false
+     },
+     "stillness_detail": {
+      "v1": {
+       "observed_span_s": 3.0,
+       "low_level": 0.011498,
+       "peak_af_in_window": 0.064236
+      },
+      "v2a": {
+       "observed_span_s": 3.0,
+       "low_level": 0.011498,
+       "peak_af_in_window": 0.064236
+      },
+      "v2": {
+       "observed_span_s": 3.0,
+       "new_interval_onset_s": 0.17
+      }
+     },
+     "labels": {
+      "v1": "negative",
+      "v2a": "negative",
+      "v2": "negative"
+     },
+     "reasons": {
+      "v1": [
+       "descent duration outside window",
+       "person moved after the descent"
+      ],
+      "v2a": [
+       "descent duration outside window",
+       "person moved after the descent"
+      ],
+      "v2": [
+       "descent duration outside window",
+       "person moved after the descent"
+      ]
+     },
+     "admitted_on_slack": false,
+     "progress": 0
+    },
+    {
+     "onset_s": 0.33,
+     "offset_s": 0.83,
+     "run_onset_s": 0.17,
+     "run_offset_s": 1.63,
+     "duration_s": 0.5,
+     "descent_satisfied": true,
+     "stillness": {
+      "v1": false,
+      "v2a": false,
+      "v2": true
+     },
+     "stillness_detail": {
+      "v1": {
+       "observed_span_s": 3.0,
+       "low_level": 0.011498,
+       "peak_af_in_window": 0.040718
+      },
+      "v2a": {
+       "observed_span_s": 2.97,
+       "low_level": 0.011498,
+       "peak_af_in_window": 0.018843
+      },
+      "v2": {
+       "observed_span_s": 3.0,
+       "new_interval_onset_s": null
+      }
+     },
+     "labels": {
+      "v1": "negative",
+      "v2a": "negative",
+      "v2": "uncertain"
+     },
+     "reasons": {
+      "v1": [
+       "person moved after the descent"
+      ],
+      "v2a": [
+       "person moved after the descent"
+      ],
+      "v2": [
+       "fall-consistent, but unmeasured: pre_posture, post_posture"
+      ]
+     },
+     "admitted_on_slack": false,
+     "progress": 1
+    },
+    {
+     "onset_s": 7.67,
+     "offset_s": 8.23,
+     "run_onset_s": 7.1,
+     "run_offset_s": 8.43,
+     "duration_s": 0.57,
+     "descent_satisfied": true,
+     "stillness": {
+      "v1": false,
+      "v2a": false,
+      "v2": true
+     },
+     "stillness_detail": {
+      "v1": {
+       "observed_span_s": 3.0,
+       "low_level": 0.011498,
+       "peak_af_in_window": 0.029074
+      },
+      "v2a": {
+       "observed_span_s": 3.0,
+       "low_level": 0.011498,
+       "peak_af_in_window": 0.013611
+      },
+      "v2": {
+       "observed_span_s": 3.0,
+       "new_interval_onset_s": null
+      }
+     },
+     "labels": {
+      "v1": "negative",
+      "v2a": "negative",
+      "v2": "uncertain"
+     },
+     "reasons": {
+      "v1": [
+       "person moved after the descent"
+      ],
+      "v2a": [
+       "person moved after the descent"
+      ],
+      "v2": [
+       "fall-consistent, but unmeasured: pre_posture, post_posture"
+      ]
+     },
+     "admitted_on_slack": false,
+     "progress": 1
+    }
+   ]
+  }
+ ],
+ "clip_dispositions": {
+  "v1": "cleared",
+  "v2a": "cleared",
+  "v2": "escalated"
+ }
+}
