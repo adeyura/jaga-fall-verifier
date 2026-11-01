@@ -249,7 +249,7 @@ because the two are different claims:
   benefit on any axis: identical missed falls, no clearances, and
   the weak standalone numbers above.
 - The pool was also thin, and that is a design limitation of the gate
-  itself, stated unprompted: rules-only produced only 4 false alarms,
+  itself: rules-only produced only 4 false alarms,
   so the >= 3 absolute criterion always rested on 2–3 clips.
 
 **The verdict in the two-level form this project uses for it:
@@ -341,7 +341,7 @@ the same run: of the 17 everyday-activity events, 0 were confirmed
 as falls, 12 were escalated to a human check, 4 were cleared, and 1
 was missed at the motion gate. "Routed to a human" therefore covers
 19 falls and 12 non-falls alike; the escalation count is the
-workload, and it is stated with the result, not under it.
+workload, and it is stated with the result.
 Definitive-alert precision was 7/7 (95% CI 0.646–1.000), against 24
 of 44 events escalated for human review. False alarms: 0 definitive
 false-positive confirmations in 0.18 h of ADL clips (exact Poisson
@@ -429,7 +429,7 @@ gate's recorded output.
 - The system's operating cost is escalation: about half of all events
   (54.5% on confirmation) are handed to a human. That is the
   deliberate price of never clearing ambiguous evidence, and it is
-  a real workload, not a footnote.
+  a real workload.
 - The no-video-archive design has a cost: a disputed alert can
   never be reviewed after the fact, because no video is retained.
 - 8 of 27 confirmation falls were cleared by the rules. Those clips
@@ -445,8 +445,7 @@ gate's recorded output.
 - Hard-negative depth is thin: UP-Fall provides 3 events per everyday
   activity per split, against a target of ~12 per category.
   Stumble-and-recover and crouch do not exist as labeled categories
-  in either headline dataset; the shortfall is reported, not papered
-  over.
+  in either headline dataset; the shortfall is reported.
 - Le2i is room×class confounded in dev (the audit section above), and
   the confirmation bounds generalization rather than establishing it:
   one UP-Fall subject, one Le2i room.
@@ -502,7 +501,7 @@ Acknowledgement is defined narrowly: it means "I am acting," and it does not end
 
 ### Shadow calibration, per home
 
-Before any alert reaches the family, the system would run in shadow for one to two weeks in that specific house: full processing, alerts delivered to the son only. This is not a formality. Floor life breaks the assumptions baked into dataset-trained thresholds. People eat sitting on the floor. They rest on the floor. Prayer involves prostration five times a day, which to a posture pipeline looks a great deal like a collapse followed by stillness. A system that cannot tell sujud from a fall will train the family to ignore it within days. The shadow period exists to measure that home's ordinary floor behavior and set its thresholds against it, and to count what the junk rate would have been before anyone had to live with it.
+Before any alert reaches the family, the system would run in shadow for one to two weeks in that specific house: full processing, alerts delivered to the son only. Floor life breaks the assumptions baked into dataset-trained thresholds. People eat sitting on the floor. They rest on the floor. Prayer involves prostration five times a day, which to a posture pipeline looks a great deal like a collapse followed by stillness. A system that cannot tell sujud from a fall will train the family to ignore it within days. The shadow period exists to measure that home's ordinary floor behavior and set its thresholds against it, and to count what the junk rate would have been before anyone had to live with it.
 
 ### Arming only the window that matters
 
