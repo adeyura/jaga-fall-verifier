@@ -572,7 +572,9 @@ scripts, manifests, and checksums only.
 - `scripts/`: downloaders, assemblers, run drivers, and
   `audit_history.py` (the pre-push credential audit).
 - `examples/`: the offline pinned example above.
-- `tests/run_checks.py`: the regression suite (77 checks).
+- `tests/run_checks.py`: the regression suite (77 checks). Run it
+  from a clean checkout with `pip install -r requirements.txt`,
+  then `python3 tests/run_checks.py`.
 
 ## Provenance and disclosures
 
