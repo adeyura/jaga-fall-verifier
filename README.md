@@ -41,6 +41,35 @@ record, with dev numbers and strata, is under
 | Confirmed false alarms | **0** across 17 everyday-activity events (0 definitive false-positive confirmations in 0.18 h of ADL clips; exact Poisson 95% CI for the rate 0–20.5/h) |
 | The experiment that failed | The pre-registered gate for the Muse Spark adjudicator **failed**, and the component was removed; reported in full under Evaluation |
 
+**Full disposition, frozen test:**
+
+| Events | Confirmed | Escalated to a human check | Cleared | Missed at the motion gate |
+|---|---:|---:|---:|---:|
+| Falls (27) | 7 | 12 | 8 | 0 |
+| Everyday activities (17) | 0 confirmed false alarms | 12 | 4 | 1 |
+
+The cost, stated with the result: 24 of 44 events (54.5%, 95% CI
+40.1–68.3) escalated to a human check. That workload is the
+deliberate price of never clearing ambiguous evidence.
+
+**Why SAM 3.1 is load-bearing (post-hoc dev diagnostic, not a
+confirmation result):** on the dev split, removing the SAM-derived
+evidence bundle made falls confirmed fall from 26/99 to 0/99 under
+every stillness reading tried, because confirmation requires both
+posture phases and posture is SAM evidence. The shipped arm also
+cleared 36/92 everyday-activity events while routing 71/99 falls to
+a human; no motion-only reading tried held that joint operating
+point. The delta belongs to the SAM evidence together with the
+SAM-dependent track logic, not to segmentation evidence in
+isolation, and no part of it should be shortened to "SAM improves
+recall." Full record: the supplementary analysis under Evaluation
+and `results/sam_ablation_dev_2026-11-01/`.
+
+**Try it:** no API key, offline, about 2 minutes, self-verifying.
+The pinned example under [Quickstart](#quickstart) runs the
+downstream pipeline stages on one real scored clip and checks its
+own output against the recorded one.
+
 ![SAM 3.1 mask overlays for one dev-set fall event: the person upright before the descent (left) and horizontal after it (right)](docs/assets/sam_mask_worked_example.png)
 
 *The evidence the rules read, for one dev-set event
@@ -74,17 +103,27 @@ volunteer, not family.*
 motion gate -> SAM 3.1 evidence -> timing / features -> rules -> alert ladder
 ```
 
-To our knowledge, Jaga is the first published fall-verification
-system to use SAM segmentation at inference time as an interpretable
-evidence layer. The claim is narrow, and it is not a claim to be the
-first fall detector or the first verified alert (systems that
-verify alerts already exist). What is
-claimed is the composition: verification as the primary design
-object, in a private home, with explicit rules over segmentation
-evidence, a family responder, an open method, and a published,
-falsifiable evaluation that includes the experiment that failed. The
-contribution is that composition and its evaluation posture, not any
-single component.
+Jaga uses SAM segmentation at inference time as an interpretable
+evidence layer. No priority is claimed for it, and this is not a
+claim to be the first fall detector or the first verified alert
+(systems that verify alerts already exist). What is claimed is the
+composition: verification as the primary design object, in a private
+home, with explicit rules over segmentation evidence, a family
+responder, an open method, and a published, falsifiable evaluation
+that includes the experiment that failed. The contribution is that
+composition and its evaluation posture, not any single component.
+
+Two published systems are close enough to name, so the composition
+claim is not read as a claim that SAM had never been applied to
+falls. Oliu et al. (WACV 2025 Workshops, "Fall Detection:
+Leveraging Depth Information in Bayesian Networks") segment the
+person and the ground plane with Grounded SAM and feed those
+segmentations as evidence variables into a Bayesian network for
+fall detection. Safe Fall (Sensors, 2026) pairs YOLOv8 detection
+with SAM 2 masks at inference time to score the quality of taught
+falls. Neither is a verification layer behind a candidate detector
+with a family responder; they are detectors and analysers, named
+here to bound the claim above.
 
 1. **Motion gate (local).** Frame differencing selects candidate
    segments. In a home, this gate is what keeps most footage from
@@ -160,7 +199,8 @@ part of what this project found.
 ### No API key: run the pinned example
 
 The install step needs the network once. After that, the example
-itself runs fully offline in about two seconds.
+itself runs fully offline in about two seconds. Use Python 3.12,
+the version the example and the regression suite are tested on.
 
 One real scored clip's SAM output is pinned under `examples/`, so the
 pipeline's downstream stages run live on real evidence with no key
@@ -184,9 +224,14 @@ never enters this repository).
 
 The pipeline takes its SAM transport as an injected callable
 (`src/jaga/sam_runner.py`), so it is not tied to one machine's
-credentials. On the author's machine the transport is the Meta Model
-API connector helper; with your own access, wire an equivalent
-callable and run one clip end to end:
+credentials. The contract is small: a callable that takes
+(image_bytes, prompt) and returns the raw SAM response stream text,
+as `helper_transport` in that module does. On the author's machine
+the transport is the Meta Model API connector helper, and
+`scripts/smoke_up_fall_clip.py` is wired to that helper and to
+author-machine paths; read it as the author's entry point, not as
+a turnkey script. With your own Meta Model API access, pass an
+equivalent callable to `SamRunner` instead:
 
 ```bash
 python3 scripts/download_ur_fall.py          # or the UP-Fall scripts below
@@ -195,10 +240,12 @@ python3 scripts/smoke_up_fall_clip.py <clip.mp4> <clip_id>
 
 UP-Fall arrives as per-trial PNG sequences: fetch with
 `scripts/download_up_fall.py`, then assemble clips with
-`scripts/assemble_up_fall_clips.py` (ffmpeg, native 18 fps). The full
-scored runs are `scripts/run_gate_d1_dev.py` and
-`scripts/run_confirmation.py`, driven by the frozen manifests in
-`results/`.
+`scripts/assemble_up_fall_clips.py` (ffmpeg, native 18 fps). The
+full-pipeline paths require ffmpeg and ffprobe on PATH (frame
+extraction and clip assembly shell out to them); the pinned example
+above needs neither. The full scored runs are
+`scripts/run_gate_d1_dev.py` and `scripts/run_confirmation.py`,
+driven by the frozen manifests in `results/`.
 
 ## Evaluation
 
@@ -599,9 +646,13 @@ scripts, manifests, and checksums only.
 - **Privacy, stated precisely:** in the design, only candidate-event
   keyframes leave the home for segmentation; continuous footage does
   not, and no video is archived. The prototype harness's local
-  cache is disclosed under The shipped system. No video is stored
-  by Jaga; event keyframes are processed by the hosted SAM 3.1 API.
-  This prototype processed public dataset clips only.
+  cache is disclosed under The shipped system. No video archive is
+  kept and no footage is stored: event keyframes are processed by
+  the hosted SAM 3.1 API. What the harness does keep, locally on
+  the author's machine and never committed, is that working cache
+  (extracted keyframes and SAM response streams, about 1.6 GB), so
+  runs can be inspected, audited, and replayed. This prototype
+  processed public dataset clips only.
 
 ## License
 
