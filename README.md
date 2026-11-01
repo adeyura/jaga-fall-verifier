@@ -54,6 +54,20 @@ output recorded for this event in the dev-set gate run, over the
 pipeline's privacy-blurred background. Full trace:
 [the worked example](results/sam_ablation_dev_2026-11-01/worked_example.md).*
 
+![The same event over time: mask axis tilt and box aspect at each recorded keyframe, with the descent core and the stillness window marked](docs/assets/worked_example_trace.png)
+
+*The same event, read over time. Each point is one keyframe from the
+record the rules scored: the mask's axis tilt (left axis) and
+bounding-box aspect (right axis), with the frozen rules' posture
+thresholds dashed, the descent core the timing stage measured shaded
+first, and the stillness window that follows it shaded second. Every
+keyframe before the descent reads upright and every keyframe after
+it reads horizontal, which is the temporal pattern the shipped rules
+require. Rendered by `scripts/render_worked_example_trace.py` from
+the per-clip record of the dev-set gate run; the lines join recorded
+points and add no values of their own. The performer is a dataset
+volunteer, not family.*
+
 ## The shipped system
 
 ```
