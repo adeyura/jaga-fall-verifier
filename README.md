@@ -18,6 +18,15 @@ deployed, it does not protect anyone yet, and every number below is a
 benchmark result on public datasets: evidence of feasibility, not of
 real-world performance.
 
+**Contents:** [Results at a glance](#results-at-a-glance) ·
+[The shipped system](#the-shipped-system) · [Quickstart](#quickstart) ·
+[Evaluation](#evaluation) ·
+[Path into the home (future work)](#path-into-the-home-future-work) ·
+[Datasets, citations, licenses](#datasets-citations-licenses) ·
+[Repository map](#repository-map) ·
+[Provenance and disclosures](#provenance-and-disclosures) ·
+[License](#license)
+
 ## Results at a glance
 
 From the frozen protocol: one confirmation run on the frozen test
@@ -98,6 +107,21 @@ single component.
    (le2i_home-01_video-16, a slow, low descent from a crouch in a dim
    room), and it is counted in the gate numbers below, not hidden by
    this sentence.
+
+   The mapping the ladder applies, exactly as `tier_for` in
+   `src/jaga/alerts.py` computes it for the shipped configuration:
+
+   | Rules outcome for the segment | Tier |
+   |---|---|
+   | Fall candidate that stands (a confirmed fall) | `urgent` |
+   | Uncertain, or no evidence either way | `check_now` |
+   | Negative (no fall pattern found) | `no_immediate_alert` |
+   | A pipeline error or a failed verification, on any outcome above | raised to at least `check_now` |
+
+   An alert goes to the first recipient on the ladder. If nobody
+   acknowledges it within the acknowledgement window (900 s by
+   default), it escalates to the next recipient; acknowledgement
+   stops the escalation.
 
 **No video archive, by design.** The system keeps verdicts, traces,
 and measurements, not footage. That sentence describes the design.
