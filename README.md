@@ -18,6 +18,8 @@ deployed, it does not protect anyone yet, and every number below is a
 benchmark result on public datasets: evidence of feasibility, not of
 real-world performance.
 
+**Track:** Build for Your World, Indie Dev.
+
 **Contents:** [Results at a glance](#results-at-a-glance) ·
 [The shipped system](#the-shipped-system) · [Quickstart](#quickstart) ·
 [Evaluation](#evaluation) ·
@@ -37,8 +39,9 @@ record, with dev numbers and strata, is under
 | | |
 |---|---|
 | Falls routed to a human (confirmed or escalated), frozen test | **19/27** (70.4%, 95% CI 51.5–84.1) |
-| Definitive-alert precision | **7/7** (95% CI 0.646–1.000), against 24 of 44 events escalated for human review |
-| Confirmed false alarms | **0** across 17 everyday-activity events (0 definitive false-positive confirmations in 0.18 h of ADL clips; exact Poisson 95% CI for the rate 0–20.5/h) |
+| Definitive-alert precision (every definitive alert it issued was a fall) | **7/7** (95% CI 0.646–1.000), against 24 of 44 events escalated for human review |
+| Confirmed false alarms | **0** across 17 everyday-activity events (0 definitive false-positive confirmations in 0.18 h of ADL (everyday activities) clips; exact Poisson 95% CI for the rate 0–20.5/h) |
+| SAM 3.1 usage, confirmation run | **1,524 keyframes** processed, $3.72 of API spend |
 | The experiment that failed | The pre-registered gate for the Muse Spark adjudicator **failed**, and the component was removed; reported in full under Evaluation |
 
 **Full disposition, frozen test:**
@@ -266,7 +269,7 @@ events), it met all four criteria. Result:
 | Criterion | Required | Measured | Result |
 |---|---|---|---|
 | 1. Safety veto: additional missed falls vs rules-only | 0 | 0 | PASS |
-| 2a. Hard-negative FA reduction, relative | >= 40% | 0.0% (4 -> 4) | FAIL |
+| 2a. Hard-negative (everyday activities that look most like falls) FA reduction, relative | >= 40% | 0.0% (4 -> 4) | FAIL |
 | 2b. Hard-negative FA reduction, absolute | >= 3 | 0 | FAIL |
 | 3. Usable adjudicator verdicts | >= 95% | 141/142 = 0.993 [0.961, 0.999] | PASS |
 
@@ -374,7 +377,8 @@ holdout, run once under the same config hash
 events: UP-Fall Subject 2 contributes 48 clips as 24 events (a
 trial's two camera views count as one event), and Coffee_room_02
 contributes 20 clips as 20 events. Every interval in this section
-treats the event, not the clip, as the independent unit:
+treats the event, not the clip, as the independent unit
+(configuration hash `6d7c03257b12ab00`):
 
 | Stratum | Falls routed to a human (confirmed or escalated) | False alarms | Definitive-alert precision | Escalation |
 |---|---|---|---|---|
@@ -394,7 +398,7 @@ of 44 events escalated for human review. False alarms: 0 definitive
 false-positive confirmations in 0.18 h of ADL clips (exact Poisson
 95% CI for the rate: 0–20.5/h; the exposure is far too short to
 estimate an operational false-alarm rate). With zero observed across
-the 17 everyday-activity events, the 95% upper bound is roughly 18%
+the 17 everyday-activity events, the 95% upper bound is 19.5%
 per event. SAM: 1,524 keyframes, 14 empty (0.9%), $3.72 of API
 spend. Full record: `results/confirmation_summary.md` and
 `results/confirmation_results.csv`.
@@ -556,7 +560,7 @@ Full verification is armed only when exactly one person is in the frame: the one
 
 ### Cost, in round numbers
 
-Order of magnitude only: roughly $500 to install (two cameras, the edge box, power backup), roughly $100 a month to run. The governing cost is not bandwidth or storage; it is the API duty cycle. Ungated, even a sparse sampling rate of one frame every four seconds across the covered rooms would mean on the order of 20,000 segmentation calls a day, and keyframing at the evaluation's 2 fps rate would mean roughly 173,000 calls per room per day. The local motion pre-filter exists to cut that to candidate events only, a few hundred to roughly a thousand calls a day, and that ratio is the number that decides whether the monthly cost holds.
+Order of magnitude only: roughly $500 to install (two cameras, the edge box, power backup), roughly $100 a month to run. The governing cost is not bandwidth or storage; it is the API duty cycle. Ungated, even a sparse sampling rate of one frame every four seconds would mean on the order of 20,000 segmentation calls per room per day, and keyframing at the evaluation's 2 fps rate would mean roughly 173,000 calls per room per day. The local motion pre-filter exists to cut that to candidate events only, a few hundred to roughly a thousand calls a day, and that ratio is the number that decides whether the monthly cost holds.
 
 ### How a pilot would be judged
 
@@ -564,7 +568,7 @@ The success criteria would be written down and fixed before the pilot starts, in
 
 - **Burden:** urgent false alarms at most one per week after the shadow period; check-now at most about three per day, with at least 90% acknowledged within 30 minutes.
 
-The escalation budget is a design parameter, fixed here in advance rather than discovered in use: at most one urgent false alarm per week after the shadow period, and check-now at most about three per day. If the measured burden runs over budget for two consecutive weeks, the pilot is failing on its own terms, and the response is to redesign coverage or thresholds, not to ask the family to tolerate more.
+The escalation budget is a design parameter, fixed here in advance rather than discovered in use. If the measured burden runs over budget for two consecutive weeks, the pilot is failing on its own terms, and the response is to redesign coverage or thresholds, not to ask the family to tolerate more.
 - **Reliability:** uptime at least 95%, measured by the heartbeat; zero days where the system was silently dead.
 - **Capture:** staged simulations, acted by a younger family member and never by the parents, captured at 90% or better; zero simulations silently cleared.
 - **Latency:** alert out within 3 minutes of the event.
@@ -648,10 +652,8 @@ scripts, manifests, and checksums only.
   not, and no video is archived. The prototype harness's local
   cache is disclosed under The shipped system. No video archive is
   kept and no footage is stored: event keyframes are processed by
-  the hosted SAM 3.1 API. What the harness does keep, locally on
-  the author's machine and never committed, is that working cache
-  (extracted keyframes and SAM response streams, about 1.6 GB), so
-  runs can be inspected, audited, and replayed. This prototype
+  the hosted SAM 3.1 API. What the harness does keep locally is the working cache
+  disclosed under The shipped system. This prototype
   processed public dataset clips only.
 
 ## License
