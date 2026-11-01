@@ -1,6 +1,7 @@
 """Regression checks for the Jaga pipeline units.
 
-Run:  PYTHONPATH=<meta_sam_parser site-packages>:src \
+Run from a clean checkout:
+        pip install -r requirements.txt
         python3 tests/run_checks.py
 
 Plain asserts, no framework: this file is the protection the frozen
