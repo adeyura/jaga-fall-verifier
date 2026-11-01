@@ -138,3 +138,16 @@ inspected. The frozen shipped pipeline will be run on it once, after
 the hackathon final on 2026-11-09, and the outcome published whatever
 it is. Replication results are never pooled with the frozen test
 split. Plan: results/replication_addendum.md.
+
+## 2026-11-01 (editorial): wording of the record clarified for publication
+
+Editorial amendment, publication hygiene only. In this record, in
+SPEC.md, in the results records, in code comments, and in commit
+messages, passages that credited decisions to the review process were
+reworded to state the decision and the reasoning or evidence it rests
+on. No number, threshold, date, result, or code behaviour changed:
+the configuration hash is 6d7c03257b12ab00, as before, and the test
+suite passes in full (77 checks), as before. Citations that pointed
+outside this repository were replaced by the substance itself or by
+the run records under results/. Decision labels (D1-D5, P1-P3) are
+unchanged.
