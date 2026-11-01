@@ -57,7 +57,7 @@ deliberate price of never clearing ambiguous evidence.
 
 **Why SAM 3.1 is load-bearing (post-hoc dev diagnostic, not a
 confirmation result):** on the dev split, removing the SAM-derived
-evidence bundle made falls confirmed fall from 26/99 to 0/99 under
+evidence bundle made confirmed falls drop from 26/99 to 0/99 under
 every stillness reading tried, because confirmation requires both
 posture phases and posture is SAM evidence. The shipped arm also
 cleared 36/92 everyday-activity events while routing 71/99 falls to
