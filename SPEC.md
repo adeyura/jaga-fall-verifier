@@ -263,3 +263,7 @@ Basis: amend the lower bound only, and only after measurement (2026-10-28); the 
 Limitation, stated: descent-core distributions are dataset-dependent (UP-Fall fall median 0.30 s vs Le2i 0.73 s). The amended window covers the union of the dev evidence; confirmation reporting stays stratified by dataset, and a divergent confirmation distribution is reported, not re-tuned against.
 
 Gate parameters: this changes src/jaga/config.py (RULES descent_min_s 0.4 → 0.15). config_hash d940d0c26c123909 → 6d7c03257b12ab00, recorded here; scored runs continue to stamp the hash they ran under.
+
+## Amendment 2026-11-01: citation targets clarified for publication
+
+Citations to DECISIONS.md in the text above refer to the published technical decision record (DECISIONS.md), which carries the protocol adoption, the dated amendments, and the 2026-10-29 gate outcome and pivot. Where the text above records a number, the number itself is in the run records under results/. No parameter, threshold, or result in this document changes.
