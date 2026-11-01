@@ -42,24 +42,6 @@ that record is results/sealed_files_manifest_verification.md
 on either amendment is reported as a pass under the amendments,
 never as a pass of the original unamended rule.
 
-Amendment (DECISIONS.md, 2026-11-01, history-rewrite mapping):
-HISTORY_REWRITE_2026-11-01.md lists this repository's 61
-pre-rewrite commit hashes and their 61 post-rewrite counterparts;
-all 122 values match the long-hex shape pattern but are commit
-identifiers, not credentials. Those exact values, and no others,
-are suppressed on lines of that file (and of this script's
-enumerated storage block) when every 40-hex value on the line is
-enumerated (HISTORY_REWRITE_COMMIT_HASHES below). The list was
-generated mechanically from the mapping file after verification:
-each pre-rewrite hash present in the preserved pre-rewrite bundle,
-each post-rewrite hash present in the current history, each pair
-matching the rewriting tool's commit-map. The set is closed: any
-other 40-hex value, including any future line in that file,
-remains a hit, and any future mapping requires a new dated
-amendment with a newly verified list. A pass relying on this
-amendment is reported as a pass under the amendments, never as a
-pass of the original unamended rule. Credential patterns are
-checked first and can never be exempted.
 """
 from __future__ import annotations
 
@@ -113,151 +95,6 @@ FILE_TOKEN = re.compile(r"[A-Za-z0-9_./\-]+\.[A-Za-z0-9]{1,8}")
 # verification on record for the manifest (DECISIONS.md, 2026-11-01).
 AMENDMENT_ID_2 = "2026-11-01"
 HASH_MANIFEST_LINE = re.compile(r"^[0-9a-f]{64}[ \t]+[^ \t]+$")
-
-# --- 2026-11-01 amendment (DECISIONS.md): the history-rewrite
-# mapping's commit hashes. HISTORY_REWRITE_2026-11-01.md lists the
-# 61 pre-rewrite commit hashes of this repository and their 61
-# post-rewrite counterparts. All 122 values match the long-hex
-# shape pattern but are commit identifiers, not credentials. They
-# are enumerated exhaustively below - generated mechanically from
-# the mapping file after the verification recorded in DECISIONS.md
-# (each pre-rewrite hash present in the preserved pre-rewrite
-# bundle, each post-rewrite hash present in the current history,
-# each pair matching the rewriting tool's commit-map) - and are
-# suppressed only on lines of that file and of this script's
-# storage block, and only when every 40-hex value on the line is
-# enumerated here. The set is closed: any other 40-hex value, on
-# any line of that file or anywhere else, remains a hit, and any
-# future mapping requires a new dated amendment with a newly
-# verified list. No other file earns suppression from this list.
-AMENDMENT_ID_3 = "2026-11-01 (history-rewrite mapping)"
-MAPPING_FILE = "HISTORY_REWRITE_2026-11-01.md"
-HEX40 = re.compile(r"\b[0-9a-f]{40}\b")
-HISTORY_REWRITE_COMMIT_HASHES = {
-    "***REMOVED***",
-    "***REMOVED***",
-    "***REMOVED***",
-    "***REMOVED***",
-    "***REMOVED***",
-    "***REMOVED***",
-    "***REMOVED***",
-    "***REMOVED***",
-    "***REMOVED***",
-    "***REMOVED***",
-    "***REMOVED***",
-    "***REMOVED***",
-    "***REMOVED***",
-    "***REMOVED***",
-    "***REMOVED***",
-    "***REMOVED***",
-    "***REMOVED***",
-    "***REMOVED***",
-    "***REMOVED***",
-    "***REMOVED***",
-    "***REMOVED***",
-    "***REMOVED***",
-    "***REMOVED***",
-    "***REMOVED***",
-    "***REMOVED***",
-    "***REMOVED***",
-    "***REMOVED***",
-    "***REMOVED***",
-    "***REMOVED***",
-    "***REMOVED***",
-    "***REMOVED***",
-    "***REMOVED***",
-    "***REMOVED***",
-    "***REMOVED***",
-    "***REMOVED***",
-    "***REMOVED***",
-    "***REMOVED***",
-    "***REMOVED***",
-    "***REMOVED***",
-    "***REMOVED***",
-    "***REMOVED***",
-    "***REMOVED***",
-    "***REMOVED***",
-    "***REMOVED***",
-    "***REMOVED***",
-    "***REMOVED***",
-    "***REMOVED***",
-    "***REMOVED***",
-    "***REMOVED***",
-    "***REMOVED***",
-    "***REMOVED***",
-    "***REMOVED***",
-    "***REMOVED***",
-    "***REMOVED***",
-    "***REMOVED***",
-    "***REMOVED***",
-    "***REMOVED***",
-    "***REMOVED***",
-    "***REMOVED***",
-    "***REMOVED***",
-    "***REMOVED***",
-    "***REMOVED***",
-    "***REMOVED***",
-    "***REMOVED***",
-    "***REMOVED***",
-    "***REMOVED***",
-    "***REMOVED***",
-    "***REMOVED***",
-    "***REMOVED***",
-    "***REMOVED***",
-    "***REMOVED***",
-    "***REMOVED***",
-    "***REMOVED***",
-    "***REMOVED***",
-    "***REMOVED***",
-    "***REMOVED***",
-    "***REMOVED***",
-    "***REMOVED***",
-    "***REMOVED***",
-    "***REMOVED***",
-    "***REMOVED***",
-    "***REMOVED***",
-    "***REMOVED***",
-    "***REMOVED***",
-    "***REMOVED***",
-    "***REMOVED***",
-    "***REMOVED***",
-    "***REMOVED***",
-    "***REMOVED***",
-    "***REMOVED***",
-    "***REMOVED***",
-    "***REMOVED***",
-    "***REMOVED***",
-    "***REMOVED***",
-    "***REMOVED***",
-    "***REMOVED***",
-    "***REMOVED***",
-    "***REMOVED***",
-    "***REMOVED***",
-    "***REMOVED***",
-    "***REMOVED***",
-    "***REMOVED***",
-    "***REMOVED***",
-    "***REMOVED***",
-    "***REMOVED***",
-    "***REMOVED***",
-    "***REMOVED***",
-    "***REMOVED***",
-    "***REMOVED***",
-    "***REMOVED***",
-    "***REMOVED***",
-    "***REMOVED***",
-    "***REMOVED***",
-    "***REMOVED***",
-    "***REMOVED***",
-    "***REMOVED***",
-    "***REMOVED***",
-    "***REMOVED***",
-    "***REMOVED***",
-    "***REMOVED***",
-    "***REMOVED***",
-    "***REMOVED***",
-}
-
 
 def is_hash_manifest(path: str) -> bool:
     return path.startswith("results/") and path.endswith(".sha256")
@@ -320,20 +157,6 @@ def amendment_suppresses(body: str, context: str) -> bool:
     values = HEX64.findall(body)
     return bool(values) and all(
         is_verified_checksum(v, context) for v in values)
-
-
-def mapping_suppresses(path: str, body: str) -> bool:
-    """The 2026-11-01 history-rewrite mapping amendment test for one
-    line: the line must sit in the mapping file itself or in this
-    script's enumerated storage block, and EVERY 40-hex value on it
-    must be one of the 122 enumerated commit hashes. Closed set: a
-    line carrying any other 40-hex value does not pass, and no other
-    file earns suppression from the list."""
-    if path not in (MAPPING_FILE, "scripts/audit_history.py"):
-        return False
-    values = HEX40.findall(body)
-    return bool(values) and all(
-        v in HISTORY_REWRITE_COMMIT_HASHES for v in values)
 
 
 def git(*args: str) -> str:
@@ -432,10 +255,6 @@ def main() -> int:
                     print(f"  SUPPRESSED under {AMENDMENT_ID} amendment "
                           f"in {path}: {body[:100]}")
                     suppressed += 1
-                elif mapping_suppresses(path, body):
-                    print(f"  SUPPRESSED under {AMENDMENT_ID_3} amendment "
-                          f"in {path}: {body[:100]}")
-                    suppressed += 1
                 elif is_checksum_context(path, body):
                     checksum_context += 1
                 else:
@@ -447,8 +266,8 @@ def main() -> int:
     if hits:
         print(f"AUDIT FAILED: {hits} hit(s). Do not push. Inspect each one.")
         return 1
-    print(f"AUDIT PASS under the {AMENDMENT_ID}, {AMENDMENT_ID_2} and "
-          f"{AMENDMENT_ID_3} amendments ({suppressed} suppressed, "
+    print(f"AUDIT PASS under the {AMENDMENT_ID} and {AMENDMENT_ID_2} "
+          f"amendments ({suppressed} suppressed, "
           f"0 unsuppressed hits): no credential-shaped content in "
           f"history or filenames.")
     return 0
