@@ -7,7 +7,7 @@ is the verification layer behind a candidate detector: it checks
 possible falls against segmentation evidence and motion timing,
 separates real events from everyday movement, and escalates only what
 a person needs to act on. It was designed for one household: the
-author's parents in Indonesia, who are usually home together — the
+author's parents in Indonesia, who are usually home together; the
 risk window is when one of them is out and the other is home alone.
 If one of them falls while the other is out, the risk is not only the
 fall. The risk is that nobody knows for hours.
@@ -15,7 +15,7 @@ fall. The risk is that nobody knows for hours.
 **Status:** a research prototype built during the Meta Global AI
 Developer Hackathon (build window Oct 26 – Nov 4, 2026 ET). It is not
 deployed, it does not protect anyone yet, and every number below is a
-benchmark result on public datasets — evidence of feasibility, not of
+benchmark result on public datasets: evidence of feasibility, not of
 real-world performance.
 
 ## Results at a glance
@@ -36,7 +36,7 @@ record, with dev numbers and strata, is under
 
 *The evidence the rules read, for one dev-set event
 (`le2i_coffee-room-01_video-02`, a staged fall from the public Le2i
-dataset — the performer is a dataset volunteer, not family). Left:
+dataset; the performer is a dataset volunteer, not family). Left:
 keyframe at 7.0 s, before the descent; the mask's axis tilt reads
 85°, upright. Right: keyframe at 9.0 s, after the descent; the same
 person's mask reads 33.5°, horizontal. Both panels are rendered by
@@ -135,7 +135,7 @@ PYTHONPATH=src .venv/bin/python examples/run_example.py
 
 You should see the frozen rules engine return `fall_candidate` for a
 staged UP-Fall fall, the evidence trace it produced, and the alert
-tier (`urgent`) — with the replay verifying its own verdict against
+tier (`urgent`), with the replay verifying its own verdict against
 the recorded one. `examples/upfall_s1_a1t1_cam1/expected_output.txt`
 is the verified output to diff against, and `examples/README.md`
 states exactly which stages run live and which are replayed from the
@@ -200,7 +200,7 @@ because the two are different claims:
 - The deciding criterion (2a/2b) was measured against a dev negative
   pool whose only four counted "false alarms" were, on a post-hoc
   visual audit (next section), real falls whose ADL labels **our dev
-  manifest inferred** from room layout — the source archives for those
+  manifest inferred** from room layout: the source archives for those
   rooms ship no annotation files. So the adjudicator's value on the
   false-alarm axis is **unmeasured by this gate, not refuted**: on a
   correctly labeled pool there were essentially no rules false alarms
@@ -208,7 +208,7 @@ because the two are different claims:
   zero).
 - It was removed anyway. The burden of proof was the project's own,
   set in advance, and it was unmet: Spark demonstrated no measured
-  benefit on any axis — identical missed falls, no clearances, and
+  benefit on any axis: identical missed falls, no clearances, and
   the weak standalone numbers above.
 - The pool was also thin, and that is a design limitation of the gate
   itself, stated unprompted: rules-only produced only 4 false alarms,
@@ -229,8 +229,8 @@ out because the burden of proof was on it.
 ### Dataset audit: Le2i label provenance (post-hoc, dev only)
 
 After the gate, two auditors independently extracted frames from the
-dev split's discordant cases — each working from their own frame
-sheets, the second without reading the first's findings — to check
+dev split's discordant cases, each working from their own frame
+sheets (the second without reading the first's findings), to check
 the labels behind the scores. Method and limits: dev data only,
 visual judgment against the dataset's own fall signature (rapid
 descent onto the pre-positioned crash mat, then sustained lying), and
@@ -254,13 +254,13 @@ annotation.
 
 Findings, scoped to that stratum:
 
-- All 4 of the gate's counted false alarms — Lecture videos 02 and
-  03, Office videos 06 and 13 — visibly show staged falls onto the
+- All 4 of the gate's counted false alarms (Lecture videos 02 and
+  03, Office videos 06 and 13) visibly show staged falls onto the
   crash mat, ending with the actor lying motionless. 4 of 4.
 - One reverse discrepancy in the annotated stratum: Coffee_room_01
   video 30 carries an annotated fall interval (frames 80–104), and
   the footage inside it shows a controlled sit onto the mat edge
-  followed by kneeling — no fall.
+  followed by kneeling, no fall.
 
 Both auditors agreed on all five clips. The reports are
 `results/gate_d1_visual_audit.md` and
@@ -390,7 +390,7 @@ gate's recorded output.
   and nothing here is a deployment claim.
 - The system's operating cost is escalation: about half of all events
   (54.5% on confirmation) are handed to a human. That is the
-  deliberate price of never clearing ambiguous evidence — and it is
+  deliberate price of never clearing ambiguous evidence, and it is
   a real workload, not a footnote.
 - The no-video-archive design has a cost: a disputed alert can
   never be reviewed after the fact, because no video is retained.
@@ -494,7 +494,7 @@ The likeliest way this fails is not technical. It is social, and it happens arou
 
 ## Datasets, citations, licenses
 
-Dataset media is **not** redistributed in this repository — download
+Dataset media is **not** redistributed in this repository: download
 scripts, manifests, and checksums only.
 
 - **UP-Fall** (headline): Martínez-Villaseñor, L. et al., "UP-Fall
@@ -508,7 +508,7 @@ scripts, manifests, and checksums only.
   [10.25666/DATAUBFC-2024-04-09](https://doi.org/10.25666/DATAUBFC-2024-04-09).
   License CC BY-NC-SA. Original dataset description: Charfi et al.
   (2013).
-- **UR Fall** (per-view diagnostics only, never pooled — in UR Fall
+- **UR Fall** (per-view diagnostics only, never pooled; in UR Fall
   the class determines the camera): Kwolek & Kępski, *Computer
   Methods and Programs in Biomedicine* 117(3), 2014. License
   CC BY-NC-SA 4.0. Fetched by `scripts/download_ur_fall.py` from
@@ -516,31 +516,31 @@ scripts, manifests, and checksums only.
 
 ## Repository map
 
-- `src/jaga/` — the pipeline: `motion_gate`, `sam_runner` /
+- `src/jaga/`: the pipeline: `motion_gate`, `sam_runner` /
   `sam_parse` (SAM 3.1 transport and stream parsing), `features`,
   `timing`, `rules`, `traces` / `overlays` (evidence forms),
   `adjudicator` (retained from the gate experiment; not in the
   shipped disposition path), `alerts` (the D2 ladder), `harness`,
   `config` (frozen parameters; their hash stamps every record).
-- `SPEC.md` — the evaluation protocol, frozen 2026-10-27; changes
+- `SPEC.md`: the evaluation protocol, frozen 2026-10-27; changes
   exist only as dated amendments inside it.
-- `DECISIONS.md` — dated, append-only decision record, including the
-  2026-10-29 pivot.
-- `results/` — run artifacts. **Claim discipline: every public number
+- `DECISIONS.md`: the published technical decision record:
+  protocol adoption, dated amendments, and the 2026-10-29 gate
+  outcome and pivot.
+- `results/`: run artifacts. **Claim discipline: every public number
   traces to the run results files here** (`gate_d1_dev_results.csv`
   for dev, `confirmation_results.csv` for confirmation) as summarized
   in their companion summaries; if a number anywhere disagrees with
   those files, the files win and the text is wrong.
-- `scripts/` — downloaders, assemblers, run drivers, and
+- `scripts/`: downloaders, assemblers, run drivers, and
   `audit_history.py` (the pre-push credential audit).
-- `examples/` — the offline pinned example above.
-- `demo/` — the demo video script.
-- `tests/run_checks.py` — the regression suite (77 checks).
+- `examples/`: the offline pinned example above.
+- `tests/run_checks.py`: the regression suite (77 checks).
 
 ## Provenance and disclosures
 
 - Built during the event window above; the commit history is the
-  evidence. Pre-existing work: none — the repository was created for
+  evidence. Pre-existing work: none; the repository was created for
   this event.
 - **AI assistance:** substantial implementation was written with an AI
   coding agent under the author's direction, working as a
