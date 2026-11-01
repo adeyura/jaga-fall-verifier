@@ -151,3 +151,15 @@ suite passes in full (77 checks), as before. Citations that pointed
 outside this repository were replaced by the substance itself or by
 the run records under results/. Decision labels (D1-D5, P1-P3) are
 unchanged.
+
+## 2026-11-01 (later): Errata and protocol closure appended to SPEC.md
+
+A dated appendix was appended to SPEC.md without changing its
+frozen text. It corrects the timing basis (descent timing runs on
+a fixed 30.0 fps analysis series, not at native source frame rate)
+and closes two protocol items that were never reported: the
+adjudicator agreement rate (never measured; the adjudicator was
+removed under the D1 gate and the shipped configuration has none)
+and the prompt-iteration count (held only in the author's
+unpublished working log; no count is claimed). No run record and
+no number changes.

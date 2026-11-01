@@ -267,3 +267,37 @@ Gate parameters: this changes src/jaga/config.py (RULES descent_min_s 0.4 → 0.
 ## Amendment 2026-11-01: citation targets clarified for publication
 
 Citations to DECISIONS.md in the text above refer to the published technical decision record (DECISIONS.md), which carries the protocol adoption, the dated amendments, and the 2026-10-29 gate outcome and pivot. Where the text above records a number, the number itself is in the run records under results/. No parameter, threshold, or result in this document changes.
+
+## Amendment 2026-11-01 (later): errata and protocol closure
+
+Two entries are appended without changing any frozen text above.
+
+1. Timing basis (erratum). The Pipeline under test section says
+descent timing is "measured locally at native frame rate". That
+sentence is superseded. As shipped and as run, descent timing is
+measured locally from the motion signal on a fixed 30.0 fps
+analysis series (src/jaga/config.py, TIMING decode_fps = 30.0).
+The source clips run at 18 fps (UP-Fall) and 25 fps (Le2i); native
+source frame rates were not used to rescale the timing features,
+so descent durations, including the frozen side window [0.15, 1.0]
+s and the ceiling window [0.15, 1.35] s, are expressed in decoder
+time under the fixed 30 fps assumption. The README's
+shipped-system section already states this basis; this entry
+brings the frozen text into agreement with it. No number in any
+run record changes.
+
+2. Protocol closure (adjudicator agreement rate; prompt
+iterations). The Metrics section promised an adjudicator agreement
+rate ("the adjudicator runs twice on the frozen set; agreement is
+reported"), and the introduction states that the number of prompt
+iterations is logged in RUNLOG.md. Closure, stated plainly: the
+agreement rate was never measured. The D1 gate removed the
+adjudicator from the disposition path on 2026-10-29, the shipped
+configuration contains no adjudicator, and the confirmation run
+records zero adjudications, so there is no shipped adjudicator
+whose agreement the frozen set could report. The prompt-iteration
+count exists only in the author's local working log, which is not
+published in this repository (see the 2026-11-01 citation amendment
+above); it is not part of the public record, and no count is
+claimed here. Both items are closed by this entry rather than left
+silently open.
