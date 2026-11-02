@@ -29,48 +29,69 @@ real-world performance.
 [Provenance and disclosures](#provenance-and-disclosures) ·
 [License](#license)
 
+Jaga was built for one house: my parents', in Indonesia. The
+situation it was built for is not rare, and the reason is structural,
+not statistical. Two people live together and are each other's
+witness for most of the day. The dangerous window opens when one of
+them goes out and the other is home alone, with nobody positioned to
+notice for hours. The adult children live far away, in other cities
+and other countries: close enough to coordinate, too far away to
+open a door. Every house shaped like that has the same window. Jaga
+was designed for that house, and for every house shaped like it.
+
 ## Results at a glance
 
 From the frozen protocol: one confirmation run on the frozen test
-split, and the pre-registered gate that ran before it. The full
+split, and the pre-registered gate that ran before it. Two terms
+used throughout: the **dev** split is the development set used for
+all iteration, and the **frozen test** split is held out and
+receives exactly one run; CI is a confidence interval. The full
 record, with dev numbers and strata, is under
 [Evaluation](#evaluation).
 
-| | |
+| Measure | Result |
 |---|---|
 | Falls routed to a human (confirmed or escalated), frozen test | **19/27** (70.4%, 95% CI 51.5–84.1) |
 | Definitive-alert precision (every definitive alert it issued was a fall) | **7/7** (95% CI 0.646–1.000), against 24 of 44 events escalated for human review |
-| Confirmed false alarms | **0** across 17 everyday-activity events (0 definitive false-positive confirmations in 0.18 h of ADL (everyday activities) clips; exact Poisson 95% CI for the rate 0–20.5/h) |
+| Confirmed false alarms | **0** across 17 everyday-activity events (0 definitive false-positive confirmations in 0.18 h of ADL (activities of daily living) clips) |
 | SAM 3.1 usage, confirmation run | **1,524 keyframes** processed, $3.72 of API spend |
-| The experiment that failed | The pre-registered gate for the Muse Spark adjudicator **failed**, and the component was removed; reported in full under Evaluation |
+| The experiment that failed | The pre-registered gate for Muse Spark, the Meta LLM tried as adjudicator, **failed**, and the component was removed; reported in full under Evaluation |
 
-**Full disposition, frozen test:**
+### Full disposition, frozen test
 
 | Events | Confirmed | Escalated to a human check | Cleared | Missed at the motion gate |
 |---|---:|---:|---:|---:|
 | Falls (27) | 7 | 12 | 8 | 0 |
 | Everyday activities (17) | 0 confirmed false alarms | 12 | 4 | 1 |
 
+The four outcomes: **confirmed** — the rules' fall verdict stands;
+**escalated** — the evidence is ambiguous, so a person checks;
+**cleared** — no fall pattern was found; **missed at the motion
+gate** — the segment was never selected, so nothing downstream
+saw it.
+
 The cost, stated with the result: 24 of 44 events (54.5%, 95% CI
 40.1–68.3) escalated to a human check. That workload is the
 deliberate price of never clearing ambiguous evidence.
 
+**Caveats that travel with the result:** the falls are staged,
+performed by young actors in lab rooms; 8 of the 27 falls were
+cleared by the rules and never visually audited; and the
+confirmation base is one UP-Fall subject and one Le2i room.
+
 **Why SAM 3.1 is load-bearing (post-hoc dev diagnostic, not a
-confirmation result):** on the dev split, removing the SAM-derived
-evidence bundle made confirmed falls drop from 26/99 to 0/99 under
-every stillness reading tried, because confirmation requires both
-posture phases and posture is SAM evidence. The shipped arm also
-cleared 36/92 everyday-activity events while routing 71/99 falls to
-a human; no motion-only reading tried held that joint operating
-point. The delta belongs to the SAM evidence together with the
-SAM-dependent track logic, not to segmentation evidence in
-isolation. Full record: the supplementary analysis under Evaluation
+confirmation result):** SAM 3.1 (Segment Anything Model) supplies
+the posture evidence the rules read, and on the dev split removing
+the SAM-derived evidence bundle made confirmed falls drop from
+26/99 to 0/99 under every stillness reading tried. Full record:
+[the supplementary analysis](#supplementary-analysis-post-hoc-2026-11-01-removing-the-sam-channels-on-the-development-set)
 and `results/sam_ablation_dev_2026-11-01/`.
 
-**Try it:** no API key, offline, about 2 minutes, self-verifying.
-The pinned example under [Quickstart](#quickstart) runs the
-downstream pipeline stages on one real scored clip and checks its
-own output against the recorded one.
+**Try it:** no API key, offline, self-verifying. The example runs
+in about two seconds; about two minutes includes the one-time
+install. The pinned example under [Quickstart](#quickstart) runs
+the downstream pipeline stages on one real scored clip and checks
+its own output against the recorded one.
 
 ![SAM 3.1 mask overlays for one dev-set fall event: the person upright before the descent (left) and horizontal after it (right)](docs/assets/sam_mask_worked_example.png)
 
@@ -79,25 +100,23 @@ own output against the recorded one.
 dataset; the performer is a dataset volunteer, not family). Left:
 keyframe at 7.0 s, before the descent; the mask's axis tilt reads
 85°, upright. Right: keyframe at 9.0 s, after the descent; the same
-person's mask reads 33.5°, horizontal. Both panels are rendered by
-the shipped overlay code (`src/jaga/overlays.py`) from the SAM 3.1
-output recorded for this event in the dev-set gate run, over the
-pipeline's privacy-blurred background. Full trace:
+person's mask reads 33.5°, horizontal. Rendered by the shipped
+overlay code (`src/jaga/overlays.py`) from the SAM 3.1 output
+recorded for this event in the dev-set gate run. Full trace:
 [the worked example](results/sam_ablation_dev_2026-11-01/worked_example.md).*
 
 ![The same event over time: mask axis tilt and box aspect at each recorded keyframe, with the descent core and the stillness window marked](docs/assets/worked_example_trace.png)
 
-*The same event, read over time. Each point is one keyframe from the
-record the rules scored: the mask's axis tilt (left axis) and
-bounding-box aspect (right axis), with the frozen rules' posture
-thresholds dashed, the descent core the timing stage measured shaded
-first, and the stillness window that follows it shaded second. Every
-keyframe before the descent reads upright and every keyframe after
-it reads horizontal, which is the temporal pattern the shipped rules
-require. Rendered by `scripts/render_worked_example_trace.py` from
-the per-clip record of the dev-set gate run; the lines join recorded
-points and add no values of their own. The performer is a dataset
-volunteer, not family.*
+*The same event, read over time: the mask's axis tilt (left axis)
+and bounding-box aspect (right axis) at each recorded keyframe,
+with the frozen rules' posture thresholds dashed, the descent core
+shaded first, and the stillness window that follows it shaded
+second. Every keyframe before the descent reads upright and every
+keyframe after it reads horizontal. Rendered by
+`scripts/render_worked_example_trace.py` from the per-clip record
+of the dev-set gate run; the lines join recorded points and add no
+values of their own. The performer is a dataset volunteer, not
+family.*
 
 ## The shipped system
 
@@ -121,22 +140,26 @@ falls. Oliu et al. (WACV 2025 Workshops, "Fall Detection:
 Leveraging Depth Information in Bayesian Networks") segment the
 person and the ground plane with Grounded SAM and feed those
 segmentations as evidence variables into a Bayesian network for
-fall detection. Safe Fall (Sensors, 2026) pairs YOLOv8 detection
-with SAM 2 masks at inference time to score the quality of taught
-falls. Neither is a verification layer behind a candidate detector
-with a family responder; they are detectors and analysers, named
-here to bound the claim above.
+fall detection. Safe Fall (Sensors, 2026; DOI:
+[10.3390/s26082491](https://doi.org/10.3390/s26082491)) pairs
+YOLOv8 detection with SAM 2 masks at inference time to score the
+quality of taught falls. Neither is a verification layer behind
+a candidate detector with a family responder; they are detectors
+and analysers, named here to bound the claim above.
 
 1. **Motion gate (local).** Frame differencing selects candidate
    segments. In a home, this gate is what keeps most footage from
    ever leaving the room. In this evaluation it filtered little: the
    clips are staged events, and nearly every clip passed the gate and
    was segmented (113 of 114 fall clips reached the SAM stage on dev;
-   42 of 42 on the confirmation split).
+   42 of 42 fall clips on the confirmation split).
 2. **SAM 3.1 evidence.** Candidate keyframes (2 fps) are segmented
    with SAM 3.1 via the Meta Model API ("person" prompt) and reduced
    to mask-derived kinematics: bounding-box aspect and elongation,
    axis tilt, centroid path, floor proximity, post-event stillness.
+   The rules read posture off the axis tilt: 55° or more counts as
+   upright, 35° or less as horizontal (the frozen thresholds in
+   `src/jaga/config.py`).
    SAM is a segmentation-derived, interpretable evidence layer: it
    outlines the person in each keyframe. The judgment about the fall
    is made by timing and rules over those outlines, never by SAM
@@ -151,7 +174,11 @@ here to bound the claim above.
    rates were not used to rescale them. A frozen rules state machine
    (upright → rapid descent → horizontal → stillness, with a safeguard
    that escalates ambiguous evidence instead of clearing it) issues
-   the verdict.
+   the verdict. Durations quoted anywhere in this repository are
+   in that fixed-rate timebase, not rescaled to a source clip's
+   native rate; the frozen descent windows are defined in the same
+   timebase, so the measurements and the thresholds they are
+   tested against stay comparable.
 4. **Tiered alert ladder.** Verdicts map to `urgent`,
    `check_now`, or `no_immediate_alert`, with acknowledgement and
    escalation if nobody responds. Uncertainty in any segment that
@@ -163,20 +190,20 @@ here to bound the claim above.
    room), and it is counted in the gate numbers below, not hidden by
    this sentence.
 
-   The mapping the ladder applies, exactly as `tier_for` in
-   `src/jaga/alerts.py` computes it for the shipped configuration:
+The mapping the ladder applies, exactly as `tier_for` in
+`src/jaga/alerts.py` computes it for the shipped configuration:
 
-   | Rules outcome for the segment | Tier |
-   |---|---|
-   | Fall candidate that stands (a confirmed fall) | `urgent` |
-   | Uncertain, or no evidence either way | `check_now` |
-   | Negative (no fall pattern found) | `no_immediate_alert` |
-   | A pipeline error or a failed verification, on any outcome above | raised to at least `check_now` |
+| Rules outcome for the segment | Tier |
+|---|---|
+| Fall candidate that stands (a confirmed fall) | `urgent` |
+| Uncertain, or no evidence either way | `check_now` |
+| Negative (no fall pattern found) | `no_immediate_alert` |
+| A pipeline error or a failed verification, on any outcome above | raised to at least `check_now` |
 
-   An alert goes to the first recipient on the ladder. If nobody
-   acknowledges it within the acknowledgement window (900 s by
-   default), it escalates to the next recipient; acknowledgement
-   stops the escalation.
+An alert goes to the first recipient on the ladder. If nobody
+acknowledges it within the acknowledgement window (900 s by
+default), it escalates to the next recipient; acknowledgement
+stops the escalation.
 
 **No video archive, by design.** The system keeps verdicts, traces,
 and measurements, not footage. That sentence describes the design.
@@ -198,11 +225,20 @@ part of what this project found.
 
 ## Quickstart
 
+Clone the repository (https://github.com/adeyura/jaga-fall-verifier)
+and work in the checkout:
+
+```bash
+git clone https://github.com/adeyura/jaga-fall-verifier
+```
+
 ### No API key: run the pinned example
 
 The install step needs the network once. After that, the example
-itself runs fully offline in about two seconds. Use Python 3.12,
-the version the example and the regression suite are tested on.
+itself runs fully offline in about two seconds; end to end,
+including the one-time install, about two minutes. Use Python
+3.12, the version the example and the regression suite are tested
+on.
 
 One real scored clip's SAM output is pinned under `examples/`, so the
 pipeline's downstream stages run live on real evidence with no key
@@ -222,7 +258,7 @@ states exactly which stages run live and which are replayed from the
 run record (the two that read the video file itself: dataset media
 never enters this repository).
 
-### With Meta Model API access: run a fresh clip
+### With Meta Model API access: what you would need to supply
 
 The pipeline takes its SAM transport as an injected callable
 (`src/jaga/sam_runner.py`), so it is not tied to one machine's
@@ -233,10 +269,26 @@ the transport is the Meta Model API connector helper, and
 `scripts/smoke_up_fall_clip.py` is wired to that helper and to
 author-machine paths; read it as the author's entry point, not as
 a turnkey script. With your own Meta Model API access, pass an
-equivalent callable to `SamRunner` instead:
+equivalent callable to `SamRunner` instead.
+
+**Prerequisites, stated before the commands:** Python 3.12, as
+above; ffmpeg and ffprobe on PATH, which the full-pipeline paths
+shell out to for frame extraction and clip assembly; and your own
+Meta Model API access. Access is granted through the Meta Model
+API programme, and this repository documents no signup path,
+because that side of the contract is Meta's. The repository's
+code reads no credential itself: the transport is the injected
+callable, and its authentication is the callable's own business.
+Cost basis: SAM 3.1 is accounted at the published rate of $0.0025
+per image processed (`SAM_IMAGE_USD` in `src/jaga/sam_runner.py`);
+the confirmation run's $3.72 is that rate over the 1,489 images
+the API billed for it. No runnable example transport ships with
+the repository — the author's callable is wired to the author's
+connector helper — so the callable is the piece you supply.
 
 ```bash
-python3 scripts/download_ur_fall.py          # or the UP-Fall scripts below
+python3 scripts/download_up_fall.py
+python3 scripts/assemble_up_fall_clips.py
 python3 scripts/smoke_up_fall_clip.py <clip.mp4> <clip_id>
 ```
 
@@ -256,8 +308,19 @@ existed: a dev split for all iteration, a frozen test split that
 receives exactly one confirmation run, event-level scoring (UP-Fall's
 two camera views of one trial count as one event), Wilson confidence
 intervals on every proportion, and per-dataset strata that are never
-pooled into a single headline. Dev and confirmation numbers are
-labeled and never pooled with each other.
+pooled into a single headline. The confirmation table below does
+show an Overall row, which pools the two datasets' events for the
+headline figure; the strata under it are reported unpooled. Dev and
+confirmation numbers are labeled and never pooled with each other.
+The protocol's decisions are numbered in SPEC.md: D1 is the
+adjudicator gate rule (next section), and D2 is the tiered alert
+ladder (under The shipped system).
+
+Subsections: [The D1 gate](#the-d1-gate-whether-the-llm-adjudicator-earned-its-place) ·
+[Le2i label provenance](#le2i-label-provenance-the-dataset-audit-post-hoc-dev-only) ·
+[Confirmation run](#confirmation-run-frozen-test-split-one-run) ·
+[Supplementary analysis](#supplementary-analysis-post-hoc-2026-11-01-removing-the-sam-channels-on-the-development-set) ·
+[Limitations](#limitations-beside-the-numbers)
 
 ### The D1 gate: whether the LLM adjudicator earned its place
 
@@ -268,18 +331,20 @@ events), it met all four criteria. Result:
 | Criterion | Required | Measured | Result |
 |---|---|---|---|
 | 1. Safety veto: additional missed falls vs rules-only | 0 | 0 | PASS |
-| 2a. Hard-negative (everyday activities that look most like falls) FA reduction, relative | >= 40% | 0.0% (4 -> 4) | FAIL |
-| 2b. Hard-negative FA reduction, absolute | >= 3 | 0 | FAIL |
+| 2a. Hard-negative (everyday activities that look most like falls) false-alarm (FA) reduction, relative | >= 40% | 0.0% (4 -> 4) | FAIL |
+| 2b. Hard-negative false-alarm reduction, absolute | >= 3 | 0 | FAIL |
 | 3. Usable adjudicator verdicts | >= 95% | 141/142 = 0.993 [0.961, 0.999] | PASS |
 
 **Verdict: FAIL.** The pivot to the rules-primary configuration above
 was executed on that verdict, without renegotiating the rule, and the
 verdict stands as recorded. Both arms routed 71/99 fall events to a
-human (confirmed or escalated) (recall 0.717 [0.622, 0.796]);
-rules-only precision was 0.867,
+human (confirmed or escalated); that routed share (recall) was
+0.717 [0.622, 0.796]. Rules-only precision was 0.867,
 the full arm's 0.852. For scale: a crude aspect-ratio baseline calls
 89/99 falls and 87/92 everyday activities "fall"; Spark alone,
-without the pipeline, confirms 49/99 falls with 7 false alarms.
+without the pipeline, confirms 49/99 falls with 7 false alarms
+(both baselines are recorded in the Baselines table of
+`results/gate_d1_dev_summary.md`).
 
 The verdict needs its second level stated as plainly as the first,
 because the two are different claims:
@@ -308,7 +373,7 @@ means unproven; unproven means removed. The full run record is
 `results/gate_d1_dev_summary.md`; the per-event results are
 `results/gate_d1_dev_results.csv`.
 
-### Dataset audit: Le2i label provenance (post-hoc, dev only)
+### Le2i label provenance: the dataset audit (post-hoc, dev only)
 
 After the gate, two auditors independently extracted frames from the
 dev split's discordant cases, each working from their own frame
@@ -358,32 +423,37 @@ per-video annotation files, and the clip manifest
 file. The frozen test was run once, with no tuning; nothing in it
 was used to revise the pipeline after the run.
 
-### Confirmation run (frozen test split, one run, shipped configuration)
+### Confirmation run (frozen test split, one run)
 
 68 clips / 44 events: UP-Fall Subject 2 plus the Le2i Coffee_room_02
 holdout, run once under the same config hash
-(`6d7c03257b12ab00`), no tuning. The 68 clips are the 44 scored
-events: UP-Fall Subject 2 contributes 48 clips as 24 events (a
-trial's two camera views count as one event), and Coffee_room_02
-contributes 20 clips as 20 events. Every interval in this section
-treats the event, not the clip, as the independent unit
-(configuration hash `6d7c03257b12ab00`):
+(`6d7c03257b12ab00`, the hash of the frozen configuration computed
+by `config_hash()` in `src/jaga/config.py`), no tuning. The 68
+clips are the 44 scored events: UP-Fall Subject 2 contributes 48
+clips as 24 events (a trial's two camera views count as one event),
+and Coffee_room_02 contributes 20 clips as 20 events. Every
+interval in this section treats the event, not the clip, as the
+independent unit:
 
 | Stratum | Falls routed to a human (confirmed or escalated) | False alarms | Definitive-alert precision | Escalation |
 |---|---|---|---|---|
-| Overall (44 events) | 19/27 = 0.704 [0.515, 0.841] | 0/17 | 7/7 = 1.000 [0.646, 1.000] | 24/44 = 0.545 [0.401, 0.683] |
-| UP-Fall Subject 2 | 11/15 = 0.733 [0.480, 0.891] | 0/9 | 5/5 = 1.000 [0.566, 1.000] | 11/24 = 0.458 |
-| Le2i Coffee_room_02 | 8/12 = 0.667 [0.391, 0.862] | 0/8 | 2/2 = 1.000 [0.342, 1.000] | 13/20 = 0.650 |
+| Overall (44 events) | 19/27 | 0/17 | 7/7 | 24/44 |
+| UP-Fall Subject 2 | 11/15 | 0/9 | 5/5 | 11/24 |
+| Le2i Coffee_room_02 | 8/12 | 0/8 | 2/2 | 13/20 |
+
+Fractions only in the cells: every interval is in
+`results/confirmation_summary.md`, and the headline intervals are
+in the prose below.
 
 Of the 27 falls: 7 confirmed, 12 escalated, 8 cleared; none was lost
-at the motion gate (gate recall 42/42 = 1.000). The burden side of
-the same run: of the 17 everyday-activity events, 0 were confirmed
-as falls, 12 were escalated to a human check, 4 were cleared, and 1
-was missed at the motion gate. "Routed to a human" therefore covers
-19 falls and 12 non-falls alike; the escalation count is the
-workload, and it is stated with the result.
-Definitive-alert precision was 7/7 (95% CI 0.646–1.000), against 24
-of 44 events escalated for human review. False alarms: 0 definitive
+at the motion gate (gate recall 42/42 fall clips = 1.000). The
+burden side of the same run: of the 17 everyday-activity events, 0
+were confirmed as falls, 12 were escalated to a human check, 4
+were cleared, and 1 was missed at the motion gate. "Routed to a
+human" therefore covers 19 falls and 12 non-falls alike; the
+escalation count is the workload, and it is stated with the
+result. Definitive-alert precision was 7/7 (95% CI 0.646–1.000).
+False alarms: 0 definitive
 false-positive confirmations in 0.18 h of ADL clips (exact Poisson
 95% CI for the rate: 0–20.5/h; the exposure is far too short to
 estimate an operational false-alarm rate). With zero observed across
@@ -412,6 +482,8 @@ effect of the SAM channels: it compared rules+SAM against
 rules+SAM+LLM, so SAM evidence was present in both arms. This
 analysis asks what changes when the SAM channels are removed.
 
+An ablation, in plain terms: the same frozen rules with one
+evidence source switched off, to see what that source carries.
 The no-SAM arm uses identical rules, thresholds, timing, and
 scoring. The SAM-derived phases (pre/post posture, keyframe-fallback
 descent) are treated as evidence-absent, because no motion-signal
@@ -424,9 +496,23 @@ to that bundle. The full definition, the stillness amendment,
 per-event dispositions, and the joined comparison are preserved in
 `results/sam_ablation_dev_2026-11-01/`.
 
-What is robust across all three motion-stillness readings (v1, the
-definition as originally written; v2a, isolating a window-anchor
-correction; v2, the arm of record):
+What is robust across all three motion-stillness readings. The
+readings differ only in how the motion-signal stillness is
+constructed. **v1** anchors the stillness window at the descent
+core and fails it if any step exceeds the clip's activity level —
+the definition as originally written; its anchor books the
+descent's own tail as post-descent movement. **v2a** keeps that
+activity-level test but re-anchors the window at the end of the
+descent run, isolating the anchor change alone. **v2** keeps the
+run-end anchor and fails stillness only when a new motion burst
+begins inside the window; it is the arm of record. The no-SAM arm
+under each reading (dev split):
+
+| Stillness reading | Falls not-missed (of 99) | ADL cleared (of 92) | ADL escalated (of 92) |
+|---|---|---|---|
+| v1 (core anchor, activity level) | 22 (0.222) | 70 | 22 |
+| v2a (run anchor, activity level) | 30 (0.303) | 64 | 28 |
+| v2 (run anchor, new-burst rule) | 98 (0.990) | 0 | 92 |
 
 - Falls confirmed fall 26/99 → 0 under every reading. That is by
   construction: confirmation requires both SAM posture phases, and
@@ -492,16 +578,6 @@ gate's recorded output.
 - Processing latency in the evaluation environment was a median of
   ~46 s per clip. This is an offline evaluation prototype.
 
-Jaga was built for one house: my parents', in Indonesia. The
-situation it was built for is not rare, and the reason is structural,
-not statistical. Two people live together and are each other's
-witness for most of the day. The dangerous window opens when one of
-them goes out and the other is home alone, with nobody positioned to
-notice for hours. The adult children live far away, in other cities
-and other countries: close enough to coordinate, too far away to
-open a door. Every house shaped like that has the same window. Jaga
-was designed for that house, and for every house shaped like it.
-
 ## Path into the home (future work)
 
 Jaga today is an evaluated pipeline on public datasets, plus a demo harness. It runs on recorded clips, not in anyone's house. This section describes what a first real pilot would look like if the family ever agrees to one, and what would have to be true before it could be trusted. Nothing here exists yet.
@@ -521,7 +597,7 @@ The **bathroom interior is permanently excluded**, by dignity, not by oversight.
 
 ### The edge box
 
-A small fanless computer in the house (N100 class, local storage, a DC uninterruptible power supply and surge protection, because heat and power cuts are normal) would run the same pipeline that was evaluated: the same code, stages, and rules, unmodified. The one thing the shadow period below adjusts is the threshold values in its config, fitted to that house. That is calibration of a deployment, and it means the measured dataset numbers are the pilot's starting point, not a promise about a recalibrated house. Cloud SAM would be retained on purpose. The measured numbers belong to that exact pipeline. Swapping in a local model to save money or latency would produce a different system whose recall and false-alarm behavior nobody has measured.
+A small fanless computer in the house (N100 class — a low-power mini-PC — with local storage, a DC uninterruptible power supply and surge protection, because heat and power cuts are normal) would run the same pipeline that was evaluated: the same code, stages, and rules, unmodified. The one thing the shadow period below adjusts is the threshold values in its config, fitted to that house. That is calibration of a deployment, and it means the measured dataset numbers are the pilot's starting point, not a promise about a recalibrated house. Cloud SAM would be retained on purpose. The measured numbers belong to that exact pipeline. Swapping in a local model to save money or latency would produce a different system whose recall and false-alarm behavior nobody has measured.
 
 The camera feed would be held in a short rolling buffer on the box. That buffer is working memory: it exists so the pipeline can look at the seconds around a candidate event, and it is continuously overwritten. It is not an archive, no footage is kept for later viewing, and there is no playback feature.
 
@@ -529,7 +605,7 @@ The camera feed would be held in a short rolling buffer on the box. That buffer 
 
 The house connection will drop. In degraded mode the box falls back to local motion heuristics only. That fallback may raise a check-now. It may never raise urgent, because the evidence behind an urgent alert is exactly what the connection carries. And it may never silently clear an event: an event the degraded system cannot judge stays open until full processing resumes or a human closes it.
 
-A heartbeat runs the other way. The box reports in at a fixed interval; a missed heartbeat is itself an alert to the family. A system that died quietly while everyone believed it was watching is worse than no system, so the design treats silence as a failure to report, never as "all clear."
+A heartbeat (the box's scheduled check-in) runs the other way. The box reports in at a fixed interval; a missed heartbeat is itself an alert to the family. A system that died quietly while everyone believed it was watching is worse than no system, so the design treats silence as a failure to report, never as "all clear."
 
 ### Who gets alerted, and what an answer means
 
@@ -549,19 +625,19 @@ Full verification is armed only when exactly one person is in the frame: the one
 
 ### Cost, in round numbers
 
-Order of magnitude only: roughly $500 to install (two cameras, the edge box, power backup), roughly $100 a month to run. The governing cost is not bandwidth or storage; it is the API duty cycle. Ungated, even a sparse sampling rate of one frame every four seconds would mean on the order of 20,000 segmentation calls per room per day, and keyframing at the evaluation's 2 fps rate would mean roughly 173,000 calls per room per day. The local motion pre-filter exists to cut that to candidate events only, a few hundred to roughly a thousand calls a day, and that ratio is the number that decides whether the monthly cost holds.
+Order of magnitude only: roughly $500 to install (two cameras, the edge box, power backup), roughly $100 a month to run. The governing cost is not bandwidth or storage; it is the API duty cycle. Ungated sampling would mean on the order of 20,000–173,000 segmentation calls per room per day; the local motion pre-filter cuts that to candidate events only, a few hundred to roughly a thousand calls a day, and that ratio is the number that decides whether the monthly cost holds.
 
 ### How a pilot would be judged
 
 The success criteria would be written down and fixed before the pilot starts, in the same spirit as the evaluation protocol:
 
 - **Burden:** urgent false alarms at most one per week after the shadow period; check-now at most about three per day, with at least 90% acknowledged within 30 minutes.
-
-The escalation budget is a design parameter, fixed here in advance rather than discovered in use. If the measured burden runs over budget for two consecutive weeks, the pilot is failing on its own terms, and the response is to redesign coverage or thresholds, not to ask the family to tolerate more.
 - **Reliability:** uptime at least 95%, measured by the heartbeat; zero days where the system was silently dead.
 - **Capture:** staged simulations, acted by a younger family member and never by the parents, captured at 90% or better; zero simulations silently cleared.
 - **Latency:** alert out within 3 minutes of the event.
 - **Privacy defeats counted, not hidden:** every covered, moved, or unplugged camera is logged as a first-class result, because it is the household voting on the design.
+
+The escalation budget is a design parameter, fixed here in advance rather than discovered in use. If the measured burden runs over budget for two consecutive weeks, the pilot is failing on its own terms, and the response is to redesign coverage or thresholds, not to ask the family to tolerate more.
 
 The measurement method matters as much as the thresholds: a family diary, a weekly call, and the staged simulations, over six to eight weeks.
 
@@ -578,18 +654,19 @@ scripts, manifests, and checksums only.
   Detection Dataset: A Multimodal Approach," *Sensors* 19(9), 1988
   (2019). DOI: [10.3390/s19091988](https://doi.org/10.3390/s19091988).
   Fetched by `scripts/download_up_fall.py`; terms per the dataset's
-  project page.
+  [project page](https://sites.google.com/up.edu.mx/har-up/).
 - **Le2i** (headline): "Fall Detection Dataset," dataUBFC record
   (creators J. Dubois and J. Miteran, ImViA, Université Bourgogne
   Europe). DOI:
   [10.25666/DATAUBFC-2024-04-09](https://doi.org/10.25666/DATAUBFC-2024-04-09).
-  License CC BY-NC-SA. Original dataset description: Charfi et al.
+  License CC BY-NC-SA. Downloaded from the dataUBFC repository at
+  the DOI above. Original dataset description: Charfi et al.
   (2013).
 - **UR Fall** (per-view diagnostics only, never pooled; in UR Fall
   the class determines the camera): Kwolek & Kępski, *Computer
   Methods and Programs in Biomedicine* 117(3), 2014. License
   CC BY-NC-SA 4.0. Fetched by `scripts/download_ur_fall.py` from
-  http://fenix.ur.edu.pl/~mkepski/ds/uf.html.
+  [http://fenix.ur.edu.pl/~mkepski/ds/uf.html](http://fenix.ur.edu.pl/~mkepski/ds/uf.html).
 
 ## Repository map
 
