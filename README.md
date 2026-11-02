@@ -64,8 +64,7 @@ cleared 36/92 everyday-activity events while routing 71/99 falls to
 a human; no motion-only reading tried held that joint operating
 point. The delta belongs to the SAM evidence together with the
 SAM-dependent track logic, not to segmentation evidence in
-isolation, and no part of it should be shortened to "SAM improves
-recall." Full record: the supplementary analysis under Evaluation
+isolation. Full record: the supplementary analysis under Evaluation
 and `results/sam_ablation_dev_2026-11-01/`.
 
 **Try it:** no API key, offline, about 2 minutes, self-verifying.
@@ -309,11 +308,6 @@ means unproven; unproven means removed. The full run record is
 `results/gate_d1_dev_summary.md`; the per-event results are
 `results/gate_d1_dev_results.csv`.
 
-In plain terms: the test was run fairly and the component failed
-it. Two dataset subsets turned out to have no labels, so that one
-criterion cannot be re-judged either way, and the component stays
-out because the burden of proof was on it.
-
 ### Dataset audit: Le2i label provenance (post-hoc, dev only)
 
 After the gate, two auditors independently extracted frames from the
@@ -357,12 +351,7 @@ not contain the affected stratum: its Le2i half is the annotated
 Coffee_room_02, and its UP-Fall labels come from the recording
 protocol's activity IDs.
 
-Label provenance, in one place: the gate's dev labels for the
-Lecture_room and Office subsets rest on archives that ship zero
-annotation files, so those everyday-activity labels were inferred
-from room role, and all 4 of the gate's counted false alarms come
-from those subsets and are label-doubtful (the audit found staged
-falls in all 4). The confirmation run's Le2i half, Coffee_room_02,
+The confirmation run's Le2i half, Coffee_room_02,
 is not one of the zero-annotation subsets: its archive ships
 per-video annotation files, and the clip manifest
 (`results/le2i_manifest.csv`) ties each clip to its annotation
@@ -633,12 +622,9 @@ scripts, manifests, and checksums only.
   evidence. Pre-existing work: none; the repository was created for
   this event.
 - **AI assistance:** substantial implementation was written with an AI
-  coding agent under the author's direction, working as a
-  pair. The author designed the
+  coding agent under the author's direction. The author designed the
   architecture and the evaluation methodology, owns every public
-  claim, and is responsible for this repository. Every build unit
-  passed independent verification against the specification before
-  acceptance.
+  claim, and is responsible for this repository.
 - **Clean room:** an independent personal project. Public datasets
   and published methods only. No employer code, data, prompts,
   labels, or internal tools appear anywhere in this repository.
@@ -650,10 +636,7 @@ scripts, manifests, and checksums only.
 - **Privacy, stated precisely:** in the design, only candidate-event
   keyframes leave the home for segmentation; continuous footage does
   not, and no video is archived. The prototype harness's local
-  cache is disclosed under The shipped system. No video archive is
-  kept and no footage is stored: event keyframes are processed by
-  the hosted SAM 3.1 API. What the harness does keep locally is the working cache
-  disclosed under The shipped system. This prototype
+  cache is disclosed under The shipped system. This prototype
   processed public dataset clips only.
 
 ## License
