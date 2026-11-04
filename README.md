@@ -169,7 +169,19 @@ PYTHONPATH=src .venv/bin/python examples/run_example.py
 
 The example then runs fully offline in about two seconds, or about two minutes end to end including install. It runs the downstream pipeline stages live on one real scored clip whose SAM output is pinned under `examples/`. The frozen rules return `fall_candidate` for a staged UP-Fall fall, with alert tier `urgent`, and the replay verifies its own verdict against the recorded one. The expected output is at `examples/upfall_s1_a1t1_cam1/expected_output.txt`.
 
-The API-backed path needs your own Meta Model API access and an injected SAM transport callable (`src/jaga/sam_runner.py`). The transport is any callable taking (image_bytes, prompt) and returning the raw response stream. ffmpeg is needed only for the full-pipeline paths, not for the pinned example.
+### With Meta Model API access
+
+The pipeline takes its SAM transport as an injected callable (`src/jaga/sam_runner.py`), so it is not tied to one machine's credentials. The contract is small: a callable that takes (image_bytes, prompt) and returns the raw SAM response stream text, as `helper_transport` in that module does. On my machine the transport is the Meta Model API connector helper, and `scripts/smoke_up_fall_clip.py` is wired to that helper and to my machine's paths; read it as my entry point, not as a turnkey script. With your own Meta Model API access, pass an equivalent callable to `SamRunner` instead.
+
+Prerequisites, stated before the commands: Python 3.12, as above; ffmpeg and ffprobe on PATH, which the full-pipeline paths shell out to for frame extraction and clip assembly; and your own Meta Model API access. This repository documents no signup path, because that side of the contract is Meta's. The repository's code reads no credential itself: the transport is the injected callable, and its authentication is the callable's own business. Cost basis: SAM 3.1 is accounted at the published rate of $0.0025 per image processed (`SAM_IMAGE_USD` in `src/jaga/sam_runner.py`); the confirmation run's $3.72 is that rate over the 1,489 images the API billed for it. No runnable example transport ships with the repository. My callable is wired to my connector helper, so the callable is the piece you supply.
+
+```bash
+python3 scripts/download_up_fall.py
+python3 scripts/assemble_up_fall_clips.py
+python3 scripts/smoke_up_fall_clip.py <clip.mp4> <clip_id>
+```
+
+UP-Fall arrives as per-trial PNG sequences: fetch with `scripts/download_up_fall.py`, then assemble clips with `scripts/assemble_up_fall_clips.py` (ffmpeg, native 18 fps). The full scored runs are `scripts/run_gate_d1_dev.py` and `scripts/run_confirmation.py`, driven by the frozen manifests in `results/`.
 
 ## Repository guide
 
