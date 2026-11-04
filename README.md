@@ -65,7 +65,7 @@ Muse Spark (Meta) is not part of the shipped disposition path. I tested it as an
 
 By design, Jaga keeps no video archive. It keeps verdicts, traces, and measurements.
 
-The evaluation harness keeps a local cache of derived records. Those records do not let anyone rewatch an event, so a disputed alert cannot be re-reviewed from footage. I regard that as a cost of the design, not a detail to skip over.
+The evaluation harness keeps a local working cache on my machine: the keyframes it extracted and the SAM response streams it received, about 1.6 GB in a git-ignored directory that is never committed. The cache exists so that runs can be inspected, audited, and replayed; it is not footage kept for later viewing. Those records do not let anyone rewatch an event, so a disputed alert cannot be re-reviewed from footage. I regard that as a cost of the design, not a detail to skip over.
 
 ## Evaluation
 
@@ -115,10 +115,11 @@ Confirmed and escalated together account for 19 of 27 falls routed to a human.
 Across both groups:
 
 - Falls routed to a human were 19 of 27 (95% CI 0.515 to 0.841).
+- Motion-gate recall was 42 of 42 fall clips (95% CI 0.916 to 1.000).
 - Definitive-alert precision was 7 of 7 (95% CI 0.646 to 1.000).
 - Escalation was 24 of 44 events (54.5%, 95% CI 0.401 to 0.683).
-- Observed false alarms per hour were 0.00 (exact Poisson 95% CI 0 to 20.5 per hour).
-- SAM 3.1 processed 1,524 keyframes during the run, at a cost of $3.72.
+- Observed false alarms per hour were 0.00 in 0.18 h of ADL clips (exact Poisson 95% CI 0 to 20.5 per hour).
+- SAM 3.1 processed 1,524 keyframes during the run; 1,489 were billed fresh calls, about $3.72 at $0.0025 per image.
 
 ### Per-dataset strata
 
@@ -166,7 +167,7 @@ PYTHONPATH=src .venv/bin/python examples/run_example.py
 
 The example then runs fully offline in about two seconds, or about two minutes end to end including install. It runs the downstream pipeline stages live on one real scored clip whose SAM output is pinned under `examples/`. The frozen rules return `fall_candidate` for a staged UP-Fall fall, with alert tier `urgent`, and the replay verifies its own verdict against the recorded one. The expected output is at `examples/upfall_s1_a1t1_cam1/expected_output.txt`.
 
-The API-backed path needs your own Meta Model API access and an injected SAM transport callable (`src/jaga/sam_runner.py`). ffmpeg is needed only for the full-pipeline paths, not for the pinned example.
+The API-backed path needs your own Meta Model API access and an injected SAM transport callable (`src/jaga/sam_runner.py`). The transport is any callable taking (image_bytes, prompt) and returning the raw response stream. ffmpeg is needed only for the full-pipeline paths, not for the pinned example.
 
 ## Repository guide
 
@@ -177,7 +178,7 @@ The API-backed path needs your own Meta Model API access and an injected SAM tra
 | `results/` | Result files and run records. Every public number traces to the run results files there; if a number anywhere disagrees with those files, the files win and the text is wrong. |
 | `examples/` | The worked examples and the pinned example. |
 | `tests/run_checks.py` | The regression suite, 77 checks. |
-| `src/` | The implementation. |
+| `src/` | The implementation, under `src/jaga/`: motion_gate, sam_runner and sam_parse, features, timing, rules, traces and overlays, alerts, harness, and the frozen config. `adjudicator.py` is retained from the removed Spark experiment and is not in the shipped path. |
 | `scripts/` | The run and evaluation scripts. |
 
 ## Data, limits, and licences
