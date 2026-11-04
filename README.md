@@ -86,6 +86,8 @@ The gate's criteria, fixed in advance on the dev split (215 clips, 191 events):
 
 On the dev split, false alarms went from 4 to 4 under the adjudicator, a reduction of 0.0% against a requirement of 40%. Its safety veto passed, but the overall gate did not.
 
+For scale, both arms routed 71 of 99 dev falls to a human. Spark alone confirmed 49 of 99 falls with 7 false alarms, and a crude aspect-ratio baseline called 87 of 92 everyday activities a fall.
+
 A post-hoc audit gave reason to doubt the labels behind the counted false alarms. Two of the source rooms ship no annotation files (in the Le2i archives, Coffee_room_01 ships 48 annotation files and Home_01 ships 30; the Lecture and Office archives ship none), and staged falls were found in all four clips counted as false alarms. That is a reason to question those labels. It is not a reason to rewrite the result, so I have kept it as a FAIL. I removed the adjudicator from the disposition path, which is why the shipped system is rules-primary.
 
 The verdict, in the two-level form this project uses for it: procedurally genuine FAIL; substantively indeterminate on the deciding criterion.
