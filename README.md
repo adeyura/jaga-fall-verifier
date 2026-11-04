@@ -126,7 +126,7 @@ Across both groups:
 - Motion-gate recall was 42 of 42 fall clips (95% CI 0.916 to 1.000).
 - Definitive-alert precision was 7 of 7 (95% CI 0.646 to 1.000).
 - Escalation was 24 of 44 events (54.5%, 95% CI 0.401 to 0.683).
-- Observed false alarms per hour were 0.00 in 0.18 h of ADL clips (exact Poisson 95% CI 0 to 20.5 per hour).
+- Confirmed false alarms were 0 in 0.18 h of ADL clips (exact Poisson 95% CI 0 to 20.5 per hour). The exposure is too short to present as a rate.
 - SAM 3.1 processed 1,524 keyframes during the run; 1,489 were billed fresh calls, about $3.72 at $0.0025 per image.
 
 ### Per-dataset strata
@@ -144,7 +144,7 @@ The motion gate missed 0 of 27 falls, but the rules then cleared 8 of 27 falls. 
 
 Escalation is doing much of the work. Everyday activities were escalated in 12 of 17 events, and the total above was 24 of 44 events. Those events are not counted as confirmed false alarms. They still route to check_now.
 
-The intervals are wide. A precision of 7 of 7 still has a lower confidence bound of 0.646, and the observed false alarm rate of 0.00 per hour has an upper confidence bound of 20.5 per hour. The denominators are small, and the results should be read that way.
+The intervals are wide. A precision of 7 of 7 still has a lower confidence bound of 0.646; the false-alarm count was 0 in only 0.18 h of ADL clips (exact Poisson 95% CI 0 to 20.5/h), an exposure too short to present as a rate. The denominators are small, and the results should be read that way.
 
 ### Limitations
 
