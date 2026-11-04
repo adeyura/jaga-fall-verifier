@@ -8,7 +8,7 @@ This repository is my entry to the Meta Global AI Developer Hackathon.
 
 ## Demo
 
-[Watch the demo on YouTube](https://youtu.be/l450QbwOGeA) (public).
+[Watch the demo on YouTube](https://youtu.be/jybb4CCkP1s) (public).
 
 The demo shows the alert ladder running in a demo harness.
 
